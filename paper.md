@@ -42,7 +42,7 @@ roadmap from our current status to adoption.
 The direction proposed in this paper does not start from a fresh slate;
 it stands firmly on top of the directions approved by SG7. In
 particular, the entire metaprogramming system builds on top of the ideas
-presented in P1240 \[1\]. However, there are some changes. In
+presented in P1240 [@P1240R1]. However, there are some changes. In
 particular, some of the terminology has evolved as result of surveying
 other languages, and much of the syntax has definitely changed. I have
 also refined the semantics of several proposals, including those of
@@ -52,7 +52,7 @@ I have two motivations for re-syntaxing proposals. First, I've come to
 the conclusion that the syntax of certain metaprogramming features
 should be sufficiently different from existing C++ notation, perhaps
 even rising to the level of "unfamiliar". Having looked at enough
-examples of static reflection \[1\] and source code injection \[2\],
+examples of static reflection and source code injection [@P1717R0],
 I've formed the opinion that those features blend in too well with the
 "normal code"; they hide in plain sight. That makes them hard (for me at
 least) to easily distinguish what parts of the code are data and which
@@ -70,23 +70,22 @@ think) achieves my goals.
 
 # Background {#bg}
 
-Same-language metaprogramming has a long history in C++, arguably
-beginning in 1994 with a demonstration of how templates can be used to
-compute prime numbers at compile time \[3\]rapidly became a new
-programming tool generic libraries \[4\]. The ability to use template
-instantiation for computation enabled a wide range of new programming
-techniques and facilities, including formalization of type traits to
-support generic programming, and type-based optimization \[5, 6\].
-However, template metaprograms are notoriously expert only, as they
-typically require a deep knowledge of the language to design and
-maintain them.
+Same-language metaprogramming has a long history in C++, arguably beginning in
+1994 with a demonstration of how templates can be used to compute prime numbers
+at compile time [@vandevoorde17] rapidly became a new programming tool generic
+libraries [@veldhuizen96]. The ability to use template instantiation for
+computation enabled a wide range of new programming techniques and facilities,
+including formalization of type traits to support generic programming, and
+type-based optimization [@abrahams04;@alexandrescu01]. However, template
+metaprograms are notoriously expert only, as they typically require a deep
+knowledge of the language to design and maintain them.
 
-In 2007, N2235 formalized and extended constant folding, including the
-ability to evaluate simple (one-line) functions at compile-time (i.e.,
-`constexpr`) \[7\]. Restrictions on what can be evaluated have been
-relaxed over the years, making more of the language available for
-constant evaluation \[8\]. Constant expressions make it significantly
-easier to write and maintain compile-time metaprograms.
+In 2003, N1521 proposed to formalize and extended constant folding, including
+the ability to evaluate simple (one-line) functions at compile-time (i.e.,
+`constexpr`) [@N1521]. Restrictions on what can be evaluated have been relaxed
+over the years, making more of the language available for constant evaluation
+[@N3597]. Constant expressions make it significantly easier to write and
+maintain compile-time metaprograms.
 
 As of 2020, we have a rich language for composing parts of programs at
 compile time. Constant expression evaluation provides a basis for
@@ -98,11 +97,11 @@ via instantiation.
 As powerful as the language already is, these facilities still don't
 fully satisfy our requirements for metaprogramming.[^2] In the
 mid-2010s, work began on a language extension for static reflection,
-ultimately resulting in a Technical Specification \[9\]. Although the
+ultimately resulting in a Technical Specification [@N4856]. Although the
 technical underpinnings of that work have changed (reflecting values
 instead of types), the overall intent has remained the same. In 2016 and
 2017, work on source code injection was also developed as a mechanism to
-support metaclasses \[10, 2\].
+support metaclasses [@P0707R0;@P1717R0].
 
 Many more proposals have been published since that work began. Based on
 surveyed papers, I see the following broad categories of use cases for
@@ -234,9 +233,9 @@ familiar syntax: functions, statements, and expressions.[^4]
 Constant expressions were initially tightly specified. `constexpr`
 functions were restricted to having bodies containing only a return
 statement and had reasonably strict limitations on the kinds of
-expressions that could be used \[7\]. Over time, these restrictions have
+expressions that could be used [@N1521]. Over time, these restrictions have
 been relaxed, allowing nearly the entirety of C++ to be usable (or at
-least writable) in `constexpr` functions \[8, 11\].
+least writable) in `constexpr` functions [@N3597;@P0784R3].
 
 This section describes some new features related to constant expression
 that impact metaprogramming.
@@ -244,8 +243,8 @@ that impact metaprogramming.
 ## Metaprograms {#constexpr.meta}
 
 P0712 introduced the ability to write code that executes where it
-appears in the program \[12\]. Over time, this evolved in into a
-metaprogram declaration, or simply *metaprogram* \[2\].
+appears in the program [@P0712R0]. Over time, this evolved in into a
+metaprogram declaration, or simply *metaprogram* [@P1717R0].
 
 ```cpp
 consteval {
@@ -263,14 +262,14 @@ Metaprogram declarations were initially designed as bootstrapping
 mechanism for executing functions which would synthesize and inject new
 source code into a translation unit. Over time, the need to positionally
 execute compile-time code been relaxed by the introduction of immediate
-functions \[13\], splicing (Section [](#splice)), and various forms of injection
+functions [@P1073R0], splicing (Section [](#splice)), and various forms of injection
 (Section 7).
 
 ## Compile-time side effects {#constexpr.effect}
 
 P0596 presents features that would allow for compile-time side effects
 in constant expressions, including compile-time output and mutable
-compile-time variables \[14\]. The problem is interesting because it
+compile-time variables [@P0596R1]. The problem is interesting because it
 requires evaluation that can modify the state of translation.
 
 Runtime side effects are limited to a few different kinds: modifying an
@@ -285,7 +284,7 @@ possible side effects:
 - or performing some other kind of compile-time I/O (Section 9).
 
 P0992 describes a conceptual model for how translation and compile-time
-evaluation interact \[15\]. This is a useful tool for understanding how
+evaluation interact [@P0992R0]. This is a useful tool for understanding how
 side-effects can be incorporated into that model. In an extremely
 literal interpretation of that model, we can interpret a request for
 constant expression evaluation as requiring the compiler to emit an
@@ -358,8 +357,8 @@ described in Section 2.
 There have been several proposals to extend parameter packs to work more
 generally by e.g., allowing indexing and declaring packs. The most
 comprehensive current proposal for extending parameter packs is P1858
-\[16\]. Of special interest, is the ability to expand a type into pack,
-first introduced in P1061 \[17\]:
+[@P1858R2]. Of special interest, is the ability to expand a type into pack,
+first introduced in P1061 [@P1061R1]:
 
 ```cpp
 auto [...pack] = make_tuple(1, 2, 3);
@@ -401,7 +400,7 @@ semantics described in P1061.
 
 The primary motivation for expansion statements was to simplify
 programming with heterogenous data types structures (i.e., tuples)
-\[18\]. They provide a control-like structure that allows the repeated
+[@P1306R1]. They provide a control-like structure that allows the repeated
 synthesis of statements within a function. For example, we can easily
 print the elements of a tuple.
 
@@ -437,7 +436,7 @@ decltype(auto) visit(F f, V const& v) {
 ```
 
 This same technique also allows us to encapsulate and generalize Duff's
-device \[19\] as a generic algorithm. The implementation is left as an
+device [@duff] as a generic algorithm. The implementation is left as an
 exercise to the reader.
 
 Although the original motivation for this feature no longer exists,
@@ -453,14 +452,14 @@ wording could be finished. The proposal has not yet been revived for
 C++23. The resurrection of the proposal needs to clarify the semantics
 of range traversal and should introduce support for break and continue.
 We should also extend structured bindings so they can decompose a
-`constexpr` range. This last feature requires adoption of P1481 \[20\].
+`constexpr` range. This last feature requires adoption of P1481 [@P1481R0].
 
 ## Template function parameters {#template.func.param}
 
 The ability to pass function arguments as constant expressions is
 particularly useful for certain abstractions such as providing `[]`
 operators for tuples. P1045 introduces the ability to declare `constexpr`
-function parameters which can be used for that purpose \[21\]. However,
+function parameters which can be used for that purpose [@P1045R0]. However,
 some members of the committee, myself included, prefer to use the
 template keyword over `constexpr` to introduce such parameters (hence the
 section name "template function parameters"). Otherwise, the idea is
@@ -494,14 +493,14 @@ the definition as a template argument.
 
 This feature potentially helps resolve some of the tensions in the
 design of the reflection library. While this paper is based on the
-POSIX-like file-descriptor approach in P1240 \[1\], wrapping that with a
-strongly typed API \[22\] could improve usability and support common C++
+POSIX-like file-descriptor approach in P1240 [@P1240R1], wrapping that with a
+strongly typed API [@P0953R2] could improve usability and support common C++
 design/programming techniques (e.g., function overloading). However,
 directly layering a strongly typed API on top of P1240 requires the
 ability to constrain overloads on the value of function arguments. P1733
-\[23\] described a mechanism by which *requires-clause*s could be made to
+[@P1733R0] described a mechanism by which *requires-clause*s could be made to
 check the values of function arguments. This was later extended in P2049
-\[24\] before both papers were sidelined to investigate whether template
+[@P2049R0] before both papers were sidelined to investigate whether template
 function parameters could solve the same problem. They mostly can.
 
 This feature lets us define constructors with template function
@@ -553,13 +552,13 @@ This feature also relates to macros (Section [](#abstract.macro)), which introdu
 # Static reflection {#reflect}
 
 The overall direction, motivation, and use cases for static reflection
-are set by P0385 \[25\] and its preceding publications, starting with
-N3996 \[26\] and ultimately leading to the Reflection TS \[9\]. The
+are set by P0385 [@P0385R2] and its preceding publications, starting with
+N3996 [@N3996] and ultimately leading to the Reflection TS [@N4856]. The
 design originates with Matúš Chochlík's work on his Mirror library
-\[27\], which uses types as handles to data describing C++ declarations.
+[@mirror], which uses types as handles to data describing C++ declarations.
 More generally, the term "mirror" describes an approach to reflection
 where program elements (e.g., declarations) are reified as existing
-first-class entities of the language \[28\].[^6] In the Reflection TS,
+first-class entities of the language [@bracha04].[^6] In the Reflection TS,
 program elements are reified as types, called metaobjects, which makes
 them eligible to be used as data in template metaprograms.
 
@@ -569,7 +568,7 @@ since types are "permanent"---they never go away. Extensive use of the
 facility will lead to large increases in the working set of a compiler
 and untenably high compile times.
 
-Both P0953 \[22\] and P1240 \[1\] propose value-based approaches to
+Both P0953 [@P0953R2] and P1240 [@P1240R1] propose value-based approaches to
 static reflection. P0953 translates the design of the Reflection TS into
 an object-oriented style class hierarchy where reflections of program
 elements are represented as objects in that hierarchy. P1240 prefers to
@@ -600,7 +599,7 @@ made concrete by a metaprogram, so the term makes sense. Given that, I
 think it is best to avoid the term.
 
 The syntax of those operators has been criticized as being inconsistent
-with other names chosen by the language \[29\]. This seems like a good
+with other names chosen by the language [@P2088R0]. This seems like a good
 opportunity to address those issues.
 
 What was called "reification" in P1240 is called "splicing" in this
@@ -611,13 +610,13 @@ redesigned the syntax of these operators to consistently use the
 syntactic pattern `|x|` to denote the splice of a reflection into the
 program.
 
-Finally, I intensely dislike the name `reflexpr`, and I am not the only
-one \[30\]. In an early draft of this paper, I had renamed the operator
-to `reify` because that fits my understanding of its behavior. Also, 
-Template Haskell has a `reify` function that takes a
-`Name` and returns an `Info` value, so at least there is existing practice to
-lean on. Unfortunately, some respondents disagreed (see the
-discussion above), so I've been left to consider alternatives.
+Finally, I intensely dislike the name `reflexpr`, and I am not the only one
+[@P2087R0]. In an early draft of this paper, I had renamed the operator to
+`reify` because that fits my understanding of its behavior. Also, Template
+Haskell has a `reify` function that takes a `Name` and returns an `Info` value,
+so at least there is existing practice to lean on. Unfortunately, some
+respondents disagreed (see the discussion above), so I've been left to consider
+alternatives.
 
 For now, I will continue using `reflexpr`, but I would very much like something
 different. I suspect that I might prefer an operator over a name.
@@ -858,7 +857,7 @@ compile-time side effects have been considered transactional: they are committed
 or aborted after an evaluation has finished. In order to implement
 std::convertible using reflection, instantiations would have to be observable
 *during* the computation, which implies that there is no clean separation
-between evaluation and translation \[15\].
+between evaluation and translation [@P0992R0].
 
 ### Reflecting expressions {#reflect.reflexpr.expr}
 
@@ -970,16 +969,15 @@ When an *id-expression* denotes an overload set, we have two options:
     resolution, or
 - explicitly support the ability to reflect on overloaded names.
 
-The approach taken in the Reflection TS \[9\] and P1240 \[1\] makes the
+The approach taken in the Reflection TS [@N4856] and P1240 [@P1240R1] makes the
 program ill-formed. However, supporting the reflection of overloaded
 names is not inherently a bad idea; it just lacks concrete use cases.
 
 An alternative approach is to support the reflection of overloaded
 functions via call expressions. Here, the reflection operand is written
 as a call expression and the declaration reflected is the one selected
-by overload resolution \[31\]. This is the approach taken in the
+by overload resolution [@P0670R4]. This is the approach taken in the
 Reflection TS. For example:
-
 
 ```cpp
 void f(int n) { }
@@ -1342,7 +1340,7 @@ template template argument at parse time. However, it's also not clear that we
 need to explicitly specify its form. The argument is a *dependent template
 argument splice*, which is semantically distinct from other kinds of template
 arguments. P1985 includes a semantically similar notion: a kind of template
-argument that potentially represents a type, value, or template \[32\].
+argument that potentially represents a type, value, or template [@P1985R1].
 
 The *nested-name-specifier* issue is similar but allows both types and
 namespaces. In fact, there is an example of this in the previous section:
@@ -1425,7 +1423,7 @@ metaprogramming capabilities of these features as much as the use of
 variadic templates has improved the ability to write generic code.
 
 This functionality relies on the semantics of structured binding packs, proposed
-in P1061 \[17\] and elaborated on by this document (Section [](#template.pack)).
+in P1061 [@P1061R1] and elaborated on by this document (Section [](#template.pack)).
 In this case, the splice of a range (as in concept) of reflections introduces a
 *splice pack*. A splice pack of the form `|range|` is inherently pack-dependent
 and denotes an unexpanded pack. When expanded, the pattern is instantiated,
@@ -1446,7 +1444,7 @@ The expression `...args` specifies its identifier as a pack. Note that
 because args is type-dependent, the splice is type-dependent rather than
 pack-dependent, meaning that expansion happens during instantiation, not
 parsing. P1858 uses the operator `[:]` to denote a dependent pack
-\[16\].
+[@P1858R2].
 
 ### Splicing names {#splice.name}
 
@@ -1522,7 +1520,7 @@ unanalyzed until they are injected, at which point the synthesized code
 is syntactically and semantically analyzed.
 
 Synthesizing programs from syntactic fragments is described in P1717
-\[2\] and updated P2050 \[33\]. The central premise of this approach is
+[@P1717R0] and updated P2050 [@P2050R0]. The central premise of this approach is
 that fragments of code to be injected should fully syntactically and
 semantically validated prior to its injection. Injecting source code
 fragments transforms the original syntax by performing a set of
@@ -2259,11 +2257,11 @@ Within the body of the function, we can expand the pack in the usual
 way, including forwarding them as needed. We haven't found any use cases
 where we need to access specific parameters, but we could provide
 reflection facilities for inspecting certain kinds of packs, or we could
-adopt the pack indexing operators described in P1858 \[16\].
+adopt the pack indexing operators described in P1858 [@P1858R2].
 
 We can do the same with template parameters, except that we would need
 to adopt some kind of universal template parameter as described in P1985
-\[32\].
+[@P1985R1].
 
 ```cpp
 template<template auto... params << meta::parameters_of(X)>
@@ -2309,7 +2307,7 @@ metaprogramming experience in C++.
 We do not want more preprocessor macros. We want something that provides
 us with all the power of preprocessor macros with none (or at least very
 few of) the problems and pitfalls. P2040 provides an initial design on
-top of P1717 \[34\]. It considers the following example (adapted for the
+top of P1717 [@P2040R0]. It considers the following example (adapted for the
 notation in this paper).
 
 ```cpp
@@ -2364,7 +2362,7 @@ consteval void log(reflexpr message) {
 ```
 
 The semantics of this feature are closely related to both `constexpr`
-function parameters \[35\] in the sense that both of these are
+function parameters [@P1045R1] in the sense that both of these are
 implicitly function templates. The definition is rewritten so that its
 reflected parameters are accepted as template arguments and (perhaps)
 not function arguments.
@@ -2372,7 +2370,7 @@ not function arguments.
 <!-- FIXME: Show the usage of this version with the reflexpr parameter. -->
 
 This also provides a basis for implementing parametric expressions
-\[36\]. In particular, a function taking a parametric expression is
+[@P1221R1]. In particular, a function taking a parametric expression is
 essentially a macro whose input is restricted to expressions of a
 particular type.
 
@@ -2408,7 +2406,7 @@ matching tree sub-expressions. However, because reflections are part of
 the regular language, we don't need to invent new syntax for matching;
 if statements can suffice. We do, however, need facilities for
 destructuring and traversing expressions as trees. Hopefully, the
-ongoing work on pattern matching \[37\] will provide more intuitive and
+ongoing work on pattern matching [@P1371R3] will provide more intuitive and
 convenient matching capabilities than lists of if statements.
 
 ## Mixins {#abstract.mixin}
@@ -2423,7 +2421,7 @@ form of composition can have some unintended consequences such as
 undesirable base class conversions, or worse, unmaintainable giant piles
 of template spaghetti.[^18]
 
-P1717 \[2\] directly and cleanly supports a style of mixins through
+P1717 [@P1717R0] directly and cleanly supports a style of mixins through
 injection declarations.[^19] For example, a user-defined integer class
 should provide the usual arithmetic operators:
 
@@ -2480,7 +2478,7 @@ sure there are compelling use cases for those other kinds of mixins.
 
 User-defined attributes provide a mechanism for either associating
 compile-time data with declarations. The ideas in this section build on
-P1887 \[37\].
+P1887 [@P1887R1].
 
 A *user-defined attribute* is an attribute that associates metadata
 (compile-time values) with a declaration. For example, we can explicitly
@@ -2518,7 +2516,7 @@ not unreasonable.
 ## Metaclasses {#abstract.metaclass}
 
 A *metaclass* is metaprogram that generates new code (usually the same
-class) from a class *prototype* \[10, 2\]. This can be used, for
+class) from a class *prototype* [@P0707R4;@P1717R0]. This can be used, for
 example, to generate common aspects of a class's structure based on the
 original specification as prototype.
 
@@ -2833,7 +2831,7 @@ new API for the programmatic construction of (essentially) abstract
 syntax trees. I'm not entirely sure what these APIs should look like.
 However, their specification will likely be challenging since every C++
 compiler structures their internal representations differently. A
-project like IPR may help us find a path forward \[38, 39\].
+project like IPR may help us find a path forward [@dosreis11;@ipr].
 
 # Compile-time I/O {#io}
 
@@ -2847,7 +2845,7 @@ could be available for metaprograms.
 The idea of supporting custom diagnostics is not new. The static\_assert
 facility was originally designed to require a diagnostic, although that
 was relaxed later. P1267 suggests new attributes that would allow
-diagnostics on constrained overloads \[40\]. Those attributes could also
+diagnostics on constrained overloads [@P1267R0]. Those attributes could also
 be extended to concept definitions themselves. But these diagnostics are
 attached to language facilities. Metaprogramming enables programmable,
 compile-time static analysis, which would allow diagnostics to be
@@ -2897,13 +2895,12 @@ integrate them into its own frameworks.
 
 ## Compile-time tracing {#io.trace}
 
-P0596 proposes `constexpr_report` \[41, 14\], which supports the printing
-of information to a console. The console is (likely to be) a distinct
-output stream from the diagnostic stream, and should not require e.g.,
-source locations. This is intended for arbitrary user output to assist
-in debugging.
+P0596 proposes `constexpr_report` [@P0596R0;@P0596R1], which supports the
+printing of information to a console. The console is (likely to be) a distinct
+output stream from the diagnostic stream, and should not require e.g., source
+locations. This is intended for arbitrary user output to assist in debugging.
 
-An updated interface to `constexpr` tracing should likely be based on more
+An updated interface to `constexpr` tracing could be based on more
 robust text-processing facilities instead of a set of overloads for
 specific values. It might also be nice to provide a streaming interface
 to the console:
@@ -3056,7 +3053,7 @@ import readable my.app.version -> std::meta::istream version;
 ```
 
 An imported `meta::istream` is essentially a consteval variable as
-described by P0596 \[14\] that is defined over a meta::resource value.
+described by P0596 [@P0596R1] that is defined over a meta::resource value.
 It can be modified (read from) during constant expression evaluation but
 is otherwise constant between evaluations.
 
@@ -3304,7 +3301,7 @@ framework would allow.
 ### Embedding data {#io.file.embed}
 
 External resources can be used to embed binary data into programs
-\[42\]. P1045 introduces features for embedding binary data in programs.
+[@P1040R6]. P1040 introduces features for embedding binary data in programs.
 The std::embed function reads a file at compile time and returns a span
 of bytes over a binary object, which is compiled as part of the
 translation unit. To manage build system dependencies, the `#depend`
@@ -3403,12 +3400,8 @@ type of an object.
 - The ability to inspect properties of types (data members, member functions)
 - The ability to create objects from a reflected type
 
-This is reasonably straightforward to implement. In fact, I've started
-building a library called *nemesis* that does exactly this \[43\]. It
-provides a simple function template reflect, which, when instantiated,
-produces an object describing the type of its argument. At the time of
-writing, that object also contains "descriptors" for each member of the
-class it describes.
+This seems reasonably straightforward to implement based on static reflection,
+based on personal (although currently private) experiments.
 
 This minimal set of features has some useful applications.
 
@@ -3448,7 +3441,7 @@ pre-written patterns and instantiate them, or programmatically construct
 new code as e.g., abstract syntax trees (as in Section [](#abstract.synth)).
 
 P1609 proposes a version of the first approach, which is essentially
-dynamic template instantiation \[44\]. The feature is reasonably
+dynamic template instantiation [@P1609R3]. The feature is reasonably
 straightforward. An interface is provided for building template
 arguments as runtime values. These arguments can be supplied to a
 dynamic template instantiation operator which instantiates a function
@@ -3540,139 +3533,8 @@ comments.
 
 # References {#ref}
 
-Note that the bibliography generator does not produce document numbers
-for WG21 papers. That will be fixed in a future revision of the paper.
-
-\[1\] A. Sutton and D. V. Faisal Vali, \"Scalable Reflection in C++\".
-
-\[2\] A. Sutton and W. Childers, \"Compile-time Metaprogramming in
-C++,\" 2019.
-
-\[3\] D. Vandevoorde, N. M. Josuttis and D. Gregor, C++
-Templates: The Complete Guide, 2 ed., Addison-Wesley Professional, 2017,
-p. 832.
-
-\[4\] T. Veldhuizen, \"Using C++ Template Metaprograms,\" *C++
-Report,* vol. 7, no. 4, pp. 36-43, May 1995. 
-
-\[5\] D. Abrahams and A. Gurtovoy, C++ Template Metaprogramming: Concepts, Tools, and Techniques
-from Boost and Beyond, Addison-Wesley Professional, 2004, p. 390.
-
-\[6\] A. Alexandrescu, Modern C++ Design: Generic Programming and Design
-Patterns Applied, Addison-Wesley Professional, 2001, p. 36
-
-0 .\[7\] G. Dos Reis, B. Stroustrup and J. Mauer, \"Generalized Constant
-Expressions,\" 2007.
-
-\[8\] R. Smith, \"Relaxing Constraints on constexpr
-Functions,\" 2013.
-
-\[9\] D. Sankel, \"C++ Extensions for Reflection,\"
-2020.
-
-\[10\] H. Sutter, \"Metaclasses: Generative C++,\" 2018.
-
-\[11\] L. Dionne, R. Smith and D. Vandevoorde, \"More constexpr containers,\"
-2019.
-
-\[12\] A. Sutton and H. Sutter, \"Implementing Language Support for
-Compile-time Metaprogramming,\" 2017.
-
-\[13\] R. Smith, A. Sutton and D.
-Vandevoorde, \"Immediate Functions,\" 2018.
-
-\[14\] D. Vandevoorde, \"Side
-Effects in Constant Evaluation: Output and consteval Variables,\"
-2019.
-
-\[15\] A. Sutton, \"Translation and evaluation: A Mental Model for
-Compile-time Programming,\" 2018.
-
-\[16\] B. Revzin, \"Generalized Pack
-Declaration and Usage,\" 2020.
-
-\[17\] B. Revzin, \"Structured Bindings
-Can Cntroduce a Pack,\" 2019.
-
-\[18\] A. Sutton, S. Goodrick and D.
-Vandevoorde, \"Expansion Statements,\" 2019.\[19\] Wikipedia, \"Duff\'s
-Device,\" 
-
-\[Online\]. Available: https://en.wikipedia.org/wiki/Duff%27s\_device. 
-[Accessed 09 08 2020\].
-
-\[20\] N. Lesser, \"Constexpr Structured Bindings,\" 2019.
-
-\[21\] D. Stone, constexpr Function Parameters, 2019. 
-
-\[22\] M. Chochlík, A. Naumann and D. Sankel, \"constexpr reflexpr,\" 2019.
-
-\[23\] D. Sankel and D. Vandevoorde, \"User-friendly and Evolution-friendly Reflection: A
-Compromise,\" 2019.
-
-\[24\] A. Sutton and W. Childers, \"Constraint Refinement for Special-cased Functions,\" 2020.
-
-\[25\] M. Chochlík, A. Naumann and D. Sankel, \"Static Reflection: Rationale, Design, and
-Evolution,\" 2017.
-
-\[26\] M. Chochlík, \"Static Reflection,\" 2014.
-
-\[27\] M. Chochlík, \"Mirror Reflection Utilities,\" 08 07 2020. \[Online\].
-
-\[28\] G. Bracha and D. Ungar, \"Mirrors: Design Principles for
-Meta-level Facilities of Object-oriented Programming Languages,\" in
-*Object-oriented Programming Languages, Systems, and Applications
-(OOPSLA)*, Vancouver, Canada, 2004. 
-
-\[29\] M. Naydenov, \"Reflection Naming: Reification,\" 2020.
-
-\[30\] M. Naydenov, \"Reflection Naming: Fix reflexpr,\" 2020.
-
-\[31\] M. Chochlík, A. Naumann and D. Sankel, \"Function Reflection,\" 2018.
-
-\[32\] M. Pusz, G. Ažman, B. Gustafsson and C. MacLean, \"Univesal Template Parameters,\" 2020.
-
-\[33\] A. Sutton and W. Childers, \"Tweaks to the Design of Source Code Fragments,\"
-2020.
-
-\[34\] C. Jabot, \"Reflection-based Lazy Evaluation,\" 2020.
-
-\[35\] D. Stone, \"constexpr Function Parameters,\" 2019.
-
-\[36\] J. Rice, \"Parameteric Expressions,\" 2018.
-
-\[37\] C. Jabot, \"Strongly-typed Reflection on Attributes,\" 2020.
-
-\[38\] G. Dos Reis and B. Stroustrup, \"A Principled, Complete, and Efficient Representation of C++,\"
-*Mathematics of Computer Science,* vol.
-
- 5, pp. 335-356, 2011. \[39\] G. Dos Reis, \"IPR,\" \[Online\]. Available:
-https://github.com/GabrielDosReis/ipr. \[Accessed 07 2020\].
-
-\[40\] H. Dusíková and B. A. Lelbach, \"Custom Constraint Diagnostics,\"
-2018.
-
-\[41\] D. Vandevoorde, std::constexpr\_trace and std::constexpr\_assert, 2017. 
-
-\[42\] J. Meneide, \"std::embed\".
-
-\[43\] A. Sutton, \"nemisis,\" 2020. \[Online\]. Available: https://gitlab.com/lock3/nemesis. 
-\[Accessed Jul 2020\].
-
-\[44\] H. Finkel, \"C++ Should Support Just-in-Time Compilation,\" 2020.
-
-\[45\] B. Stroustrup and A. Sutton, \"A Concept Design for the STL\". 2013.
-
-\[46\] A. Sutton and H. Sutter, \"A Design for Static Reflection\". 2017.
-
-\[47\] S. Murzin, M. Park, D. Sankel and D. Sarginson, \"Pattern Matching\". 2020.
-
-\[48\] B. Stroustrup, Design and Evolution of C++, Addison-Wesley Professional;, 1994, p. 480.
-
-\[49\] J. Meneide, \"Module Resource Dependency Propagation\".
-
-\[50\] G. Dos Reis, J. D. Garcia, J. Lakos, A. Merideth, N. Meyers and B. Stroustrup, \"Support for Contract-based
-Programming in  C++,\" 2018.\[51\] J. Coe and R. Orr, \"Extension methods for C++,\" 2015.
+::: {#refs}
+:::
 
 <!-- Footnotes -->
 

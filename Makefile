@@ -4,7 +4,9 @@ default: paper.pdf paper.docx
 paper.docx: paper.md
 	pandoc $< -s -o $@
 
-pandoc_latexflags=-f markdown -t latex -s -N -L ref.lua
+bib_flags=-C --csl ieee.csl --bibliography paper.bib --bibliography wg21.bib
+lua_flags=-L ref.lua
+pandoc_latexflags=-f markdown+citations -t latex -s -N ${bib_flags} ${lua_flags}
 
 paper.pdf: paper.md
 	pandoc $< ${pandoc_latexflags} -o $@
