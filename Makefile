@@ -4,7 +4,7 @@ default: paper.pdf paper.docx
 paper.docx: paper.md
 	pandoc $< -s -o $@
 
-pandoc_latexflags=-f markdown+header_attributes -t latex -s -N -L ref.lua
+pandoc_latexflags=-f markdown -t latex -s -N -L ref.lua
 
 paper.pdf: paper.md
 	pandoc $< ${pandoc_latexflags} -o $@
