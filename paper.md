@@ -83,7 +83,7 @@ maintain them.
 
 In 2007, N2235 formalized and extended constant folding, including the
 ability to evaluate simple (one-line) functions at compile-time (i.e.,
-constexpr) \[7\]. Restrictions on what can be evaluated have been
+`constexpr`) \[7\]. Restrictions on what can be evaluated have been
 relaxed over the years, making more of the language available for
 constant evaluation \[8\]. Constant expressions make it significantly
 easier to write and maintain compile-time metaprograms.
@@ -231,12 +231,12 @@ write compile-time programs that analyze, transform, and use
 compile-time data. Importantly, they provide that facility using
 familiar syntax: functions, statements, and expressions.[^4]
 
-Constant expressions were initially tightly specified. constexpr
+Constant expressions were initially tightly specified. `constexpr`
 functions were restricted to having bodies containing only a return
 statement and had reasonably strict limitations on the kinds of
 expressions that could be used \[7\]. Over time, these restrictions have
 been relaxed, allowing nearly the entirety of C++ to be usable (or at
-least writable) in constexpr functions \[8, 11\].
+least writable) in `constexpr` functions \[8, 11\].
 
 This section describes some new features related to constant expression
 that impact metaprogramming.
@@ -444,7 +444,7 @@ Although the original motivation for this feature no longer exists,
 expansion statements are still an extremely useful tool as fundamental
 building blocks of algorithms on heterogenous data types: they directly
 express traversal of e.g., tuples. The ability to make the loop variable
-constexpr is also directly usable by metaprograms that need to splice
+`constexpr` is also directly usable by metaprograms that need to splice
 elements of a sequence into a function body (Section [](#splice)).
 
 Expansion statements were approved by EWG for inclusion in C++20 very
@@ -584,7 +584,7 @@ Our preference is to base static reflection on P1240 as it provides a
 more efficient (faster compile-times) and flexible low-level facility
 for reflecting values. It should be possible to implement the more
 strongly typed design of P0953 on top of the lower-level facilities of
-P1240, possibly with the help of constexpr function parameters.
+P1240, possibly with the help of `constexpr` function parameters.
 
 That said, some aspects of the design in P1240 should be revised.
 
@@ -640,7 +640,7 @@ As in P1240, `reflexpr` takes a name or other construct and yields
 *constant reflection*, a constant expression whose type is `meta::info`.
 The value of that expression is an opaque reference to the compiler's
 internal representation of the enumeration type. We assign that to the
-constexpr variable `t`. In general, reflections must either be constant
+`constexpr` variable `t`. In general, reflections must either be constant
 expressions or only used during constant expression evaluation.
 Reflections must not leak into runtime code. The reflection operator
 and queryable properties are described in Section [](#reflect.reflexpr).
@@ -653,7 +653,7 @@ constant expression within the body of the loop.
 The expression `|x|` is a called a *splice*. It is replaced by an expression
 naming the entity designated by `x`, in this case the corresponding enumerator.
 The operand of a splice operator must be a constant reflection. This operator
-replaces the idexpr operator in P1240 (previously called unreflexpr). The reason
+replaces the idexpr operator in P1240 (previously called `unreflexpr`). The reason
 for choosing a new notation is to find a uniform notation for inserting
 "snippets of code" into various program constructs. This concept is discussed in
 more detail in Section [](#splice). A related feature, source code injection, is
@@ -693,13 +693,13 @@ frameworks, where queries return small structs whose contents are copied
 ## Reflection {#reflect.reflexpr}
 
 A major component of static reflection is the ability to inspect the
-properties of source code constructs. This is done using the reflexpr
+properties of source code constructs. This is done using the `reflexpr`
 operator and an extensive library of queries for the various properties
-of entities, expressions, declarations, etc. The reflexpr operator does
+of entities, expressions, declarations, etc. The `reflexpr` operator does
 exactly what it says: it takes a construct and yields an object that can
 be queried and manipulated programmatically.
 
-When we say that the reflexpr operator takes a "name or other
+When we say that the `reflexpr` operator takes a "name or other
 construct," we mean that it accepts one of the following as an operand:
 
 - An *expression*
@@ -708,7 +708,7 @@ construct," we mean that it accepts one of the following as an operand:
 - A possibly qualified *namespace-name*
 - The token `::`
 
-The `meta::info` object produced by the reflexpr operator *reflects* the
+The `meta::info` object produced by the `reflexpr` operator *reflects* the
 construct given as an operand. We also say that the object holds a
 reflection value, or more simply that it holds a reflection. There are
 two aspects of every reflection: its syntax and its semantics.
@@ -862,7 +862,7 @@ between evaluation and translation \[15\].
 
 ### Reflecting expressions {#reflect.reflexpr.expr}
 
-The reflexpr operator accepts an *expression* as an operand. The reason
+The `reflexpr` operator accepts an *expression* as an operand. The reason
 that P1240 allows the reflection of expressions is twofold. First, it
 generalizes the syntax of the Reflection TS, which requires call syntax
 to reflect overloaded names. Second, it aimed to be more consistent with
@@ -936,7 +936,7 @@ To do so, we would also need to reflect statements.
 
 #### Reflecting class members {#reflect.reflexpr.member}
 
-A *qualified-id* used as the operand to reflexpr can select both static
+A *qualified-id* used as the operand to `reflexpr` can select both static
 and non-static data members, including bitfields.
 
 ```cpp
@@ -997,7 +997,7 @@ properties of e are:
 The entity denoted by the call expression is the function `f(int)`.
 Semantic properties of `e` are those of that function.
 
-The fact that reflexpr accepts expressions as operands means that this
+The fact that `reflexpr` accepts expressions as operands means that this
 naturally works for overloaded operators:[^9]
 
 ```cpp
@@ -1086,9 +1086,9 @@ operator.
 
 ### Splicing equations {#splice.eq}
 
-The splicing operators and the reflexpr operator have a very simple
+The splicing operators and the `reflexpr` operator have a very simple
 relationship. For any term x that can be used as an operand to the
-reflexpr operator, if the splice of that reflection is valid, then the
+`reflexpr` operator, if the splice of that reflection is valid, then the
 following is true:
 
 ```cpp
@@ -1483,7 +1483,7 @@ constexpr int n = 42;
 ```
 
 Note that the last usage assumes that `std::format` will eventually be
-declared constexpr.
+declared `constexpr`.
 
 The identifier splice operator is used only to generate *unqualified-id*s. There
 are actually five ways to generate *unqualified-id*s using splicing.
@@ -2220,11 +2220,11 @@ There are only a handful of specifiers that can be changed when cloning
 a member.
 
 - The access of a class member can be changed.
-- A member can be made static.
-- A member can be made virtual or pure virtual or marked override or final.
-- A class can be marked final.
-- A declaration can be made constexpr, consteval, or constinit.
-- A declaration can be made inline.
+- A member can be made `static`.
+- A member can be made `virtual` or pure virtual or marked `override` or `final`.
+- A class can be marked `final`.
+- A declaration can be made `constexpr`, `consteval`, or `constinit`.
+- A declaration can be made `inline`.
 - A declaration can be renamed.
 
 The ability to modify reflections for the purpose of cloning is purely
@@ -2393,9 +2393,9 @@ print(int);
 
 The compiler needs to know, at the point it starts parsing function
 arguments, that print is not a normal function. Again, this raises
-issues with dependent macros. We would need new syntax to explicitly
+issues with dependent macros. We might need new syntax to explicitly
 denote that a call expression was a macro call or a normal call, which
-could be a simple as writing reflexpr before the start of the argument
+could be a simple as writing `reflexpr` before the start of the argument
 list.
 
 ```
@@ -2882,8 +2882,8 @@ meta::warning(meta::location_of(decl))
 Here, the warning function returns a stream pinned to the location of
 the declaration.
 
-User-defined diagnostics should not be usable in non-constexpr code.
-Even in constexpr functions, we would have to ensure the diagnostic does
+User-defined diagnostics should not be usable in non-`constexpr` code.
+Even in `constexpr` functions, we would have to ensure the diagnostic does
 not "leak into runtime". This is also true for compile-time tracing
 (Section [](#io.trace)).
 
@@ -2897,13 +2897,13 @@ integrate them into its own frameworks.
 
 ## Compile-time tracing {#io.trace}
 
-P0596 proposes constexpr\_report \[41, 14\], which supports the printing
+P0596 proposes `constexpr_report` \[41, 14\], which supports the printing
 of information to a console. The console is (likely to be) a distinct
 output stream from the diagnostic stream, and should not require e.g.,
 source locations. This is intended for arbitrary user output to assist
 in debugging.
 
-An updated interface to constexpr tracing should likely be based on more
+An updated interface to `constexpr` tracing should likely be based on more
 robust text-processing facilities instead of a set of overloads for
 specific values. It might also be nice to provide a streaming interface
 to the console:
@@ -2919,13 +2919,13 @@ Here, console is a kind of ostream like cout or cerr.[^23] Whether we
 would need different versions of the console to accept wide characters
 is an open question.
 
-The original proposals ensured that constexpr tracing did not affect the
+The original proposals ensured that `constexpr` tracing did not affect the
 behavior of the abstract machine, meaning the statement has no effect on
 runtime behavior. With a streaming interface, implementations might have
 to work a little harder to suppress runtime code generation for such
 statements.
 
-P0596 also includes constexpr\_assert. I think the design of that
+P0596 also includes `constexpr_assert`. I think the design of that
 feature should be covered in the contracts proposals and not here.
 
 ## Compile-time file I/O {#io.file}
@@ -2934,7 +2934,7 @@ The ability to read from and write to external files at compile-time is
 game changing. It allows a program's definition to depend on external
 data in a way that isn't really possible in modern C++. You can
 approximate those dependencies with clever uses of the preprocessor and
-constexpr variables, but those approaches generally require an external
+`constexpr` variables, but those approaches generally require an external
 program to format the source data (into a C++-compatible format).
 
 One especially powerful use of compile-time file I/O is GUI programming.
