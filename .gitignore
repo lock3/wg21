@@ -1,3 +1,5 @@
-bench_fig1.png
 *.pdf
 *.docx
+
+# Don't ignore publications
+!p2237r1.pdf
