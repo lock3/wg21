@@ -21,8 +21,12 @@ function resolve_section_ref (link)
   if #link.content > 0 or link.target:sub(1, 1) ~= '#' then
     return nil
   end
-  local section_number = pandoc.Str(section_numbers[link.target])
-  return pandoc.Link({section_number}, link.target, link.title, link.attr)
+  local number = section_numbers[link.target];
+  if number == nil then
+    print("warning: unresolved reference", link.target)
+    return pandoc.Str("Unresolved reference");
+  end
+  return pandoc.Link({pandoc.Str(number)}, link.target, link.title, link.attr)
 end
 
 return {

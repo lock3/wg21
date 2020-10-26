@@ -30,15 +30,14 @@ pieces together without a reference picture. That can't turn out well.
 We need that reference to know not only how the pieces fit together, but
 what they look like when combined.
 
-The direction proposed in this paper is synthesized from a survey of
-various programming languages[^1] and an extensive set of related C++
-proposals. The reason for looking at other languages is to ensure that
-our terminology and ideas generally conform to common usage, and that we
-aren't inventing something entirely new. The purpose of surveying a
-large set of C++ proposals is to ensure that the reference picture is
-comprehensive and addresses many of the shared problems addressed the
-various proposals. Section XXX provides a rough roadmap from our current
-status to adoption.
+The direction proposed in this paper is synthesized from a survey of various
+programming languages[^1] and an extensive set of related C++ proposals. The
+reason for looking at other languages is to ensure that our terminology and
+ideas generally conform to common usage, and that we aren't inventing something
+entirely new. The purpose of surveying a large set of C++ proposals is to ensure
+that the reference picture is comprehensive and addresses many of the shared
+problems addressed the various proposals. Section [](#roadmap) provides a rough
+roadmap from our current status to adoption.
 
 The direction proposed in this paper does not start from a fresh slate;
 it stands firmly on top of the directions approved by SG7. In
@@ -159,50 +158,41 @@ metaprogramming, features on the outside provide enhanced tools for
 library and framework developers as well as (I hope) an improved user
 experience.
 
-The foundation of that system is constant expression evaluation and
-templates. Constant expressions allow the compile-time evaluation of
-functions to analyze and manipulate compile-time data, while templates
-support the controlled synthesis of new declarations and their injection
-into the current translation unit. Both are currently being extended to
-provide more extensive support for metaprogramming. Extensions to both
-constant expression evaluation and templates will directly support some
-features described in this document. These are discussed in Sections 4
-and 5, respectively.
+The foundation of that system is constant expression evaluation and templates.
+Constant expressions allow the compile-time evaluation of functions to analyze
+and manipulate compile-time data, while templates support the controlled
+synthesis of new declarations and their injection into the current translation
+unit. Both are currently being extended to provide more extensive support for
+metaprogramming. Extensions to both constant expression evaluation and templates
+will directly support some features described in this document. These are
+discussed in Sections [](#constexpr) and [](#template), respectively.
 
-The core of the metaprogramming system is static reflection (Section 6),
-which provides the ability to inspect source code constructs and
-generate references, while source code injection (Section 7) allows
-various program constructs to be synthesized as data and then injected
-into the program. If constant expressions and templates define a basic
-computer for metaprogramming, then static reflection and source code
-injection are its assembly language. They define the primitives that
-allow for the programmatic construction of classes, functions,
-libraries, and frameworks.
+The core of the metaprogramming system is static reflection (Section
+[](#reflect)), which provides the ability to inspect source code constructs and
+generate references, while source code injection (Section [](#inject)) allows
+various program constructs to be synthesized as data and then injected into the
+program. If constant expressions and templates define a basic computer for
+metaprogramming, then static reflection and source code injection are its
+assembly language. They define the primitives that allow for the programmatic
+construction of classes, functions, libraries, and frameworks.
 
 On top of the metaprogramming core, we can provide many new features
 that simplify repetitive tasks or common programming idioms. These
 features are essentially syntactic sugar, albeit with sometimes complex
 rewrite rules. Examples include:
 
-- Syntactic macros[^3] to encapsulate idiomatic patterns
-- Mixins for improved compositional design
-- Metadata annotations as input to metaprogramming frameworks
-- Function decorators to supplement or modify function behavior
-- Metaclasses to supplement or modify class structure
+- Syntactic macros[^3] to encapsulate idiomatic patterns (Section [](#abstract.macro))
+- Mixins for improved compositional design (Section [](#abstract.mixin))
+- Metadata annotations as input to metaprogramming frameworks (Section [](#abstract.attr))
+- Metaclasses and/or stereotypes support the ability to generate new
+  declarations from input declarations (Sections [](#abstract.metaclass) and
+  [](#abstract.stereo), respectively).
 
 All these features are rooted in syntactic rewrites in terms of static
-reflection and source code injection.
+reflection and source code injection. 
 
-The ability to create program elements incrementally supports more
-advanced forms of metaprogramming. In particular, this opens the door to
-defining functional transforms: metaprograms that generate new functions
-(or other declarations) based on the definition of their input (Section
-8.4). Example use cases include:
-
-- Automatically currying functions
-- Automatic differentiation
-- Other symbolic transformations and analyses
-
+More involved applications of the last concepts include function currying and
+automatic differentiation (Section [](#abstract.synth)).
 These use cases rely on deep inspection of function definitions (i.e.,
 statements and expressions) to analyze the symbolic structure of
 functions, and to incrementally construct new functions or data based on
@@ -211,7 +201,8 @@ the metaprogramming system into a compiler.
 
 Almost all computer systems need input and output. This is true for a
 metaprogramming system as well. There have been several proposals
-suggesting adding various forms of compile-time input and output.
+suggesting adding various forms of compile-time input and output
+(Section [](#io)).
 
 - Compile-time tracing to improve compile-time debugging
 - User-supplied errors and warnings to improve diagnostics
@@ -223,7 +214,7 @@ Facilities for Compile-time I/O are discussed in Section 9.
 
 Finally, the scope of these facilities is clearly not limited to
 compile-time programming. In particular, we want to allow runtime usage
-of our core facilities (Section 10) to enable use cases such as:
+of our core facilities (Section [](#runtime)) to enable use cases such as:
 
 - Runtime inspection of objects
 - Just-in time compilation
@@ -272,7 +263,7 @@ Metaprogram declarations were initially designed as bootstrapping
 mechanism for executing functions which would synthesize and inject new
 source code into a translation unit. Over time, the need to positionally
 execute compile-time code been relaxed by the introduction of immediate
-functions \[13\], splicing (Section 6.3), and various forms of injection
+functions \[13\], splicing (Section [](#splice)), and various forms of injection
 (Section 7).
 
 ## Compile-time side effects {#constexpr.effect}
@@ -400,11 +391,11 @@ we know how to expand pack. Similarly, the use of pack in `pack...` is
 *pack-dependent*, meaning that it refers to a declaration with pack
 type.
 
-The ability to create structured argument packs plays an important role
-in splicing ranges of reflections (Section 6). We should be able to
-expand a range (as in concept) of reflections into references to the
-reflected constructs they designate (Section 6.3.8). That feature builds
-on the semantics described in P1061.
+The ability to create structured argument packs plays an important role in
+splicing ranges of reflections (Section [](#reflect)). We should be able to
+expand a range (as in concept) of reflections into references to the reflected
+constructs they designate (Section [](#splice.pack)). That feature builds on the
+semantics described in P1061.
 
 ## Expansion statements {#template.expand}
 
@@ -454,7 +445,7 @@ expansion statements are still an extremely useful tool as fundamental
 building blocks of algorithms on heterogenous data types: they directly
 express traversal of e.g., tuples. The ability to make the loop variable
 constexpr is also directly usable by metaprograms that need to splice
-elements of a sequence into a function body (Section 6.3).
+elements of a sequence into a function body (Section [](#splice)).
 
 Expansion statements were approved by EWG for inclusion in C++20 very
 late in the standardization cycle and the clock ran out before the
@@ -556,7 +547,7 @@ those classes can be partially ordered by inheritance. More work is
 needed, either on the design of the library or language features needed
 to make the library work.
 
-This feature also relates to macros (Section 8.2), which introduces
+This feature also relates to macros (Section [](#abstract.macro)), which introduces
 "reflection parameters," allowing arguments to be passed by reflection.
 
 # Static reflection {#reflect}
@@ -652,21 +643,21 @@ internal representation of the enumeration type. We assign that to the
 constexpr variable `t`. In general, reflections must either be constant
 expressions or only used during constant expression evaluation.
 Reflections must not leak into runtime code. The reflection operator
-and queryable properties are described in Section 6.2.
+and queryable properties are described in Section [](#reflect.reflexpr).
 
 The `meta::members_of` function returns a range over `E`'s enumerators,
 each element of which is also reflected as a `meta::info` value. Here, we
 use an expansion statement because we need the value of `x` to be a
 constant expression within the body of the loop.
 
-The expression `|x|` is a called a *splice*. It is replaced by an
-expression naming the entity designated by `x`, in this case the
-corresponding enumerator. The operand of a splice operator must be a
-constant reflection. This operator replaces the idexpr operator in P1240
-(previously called unreflexpr). The reason for choosing a new notation
-is to find a uniform notation for inserting "snippets of code" into
-various program constructs. This concept is discussed in more detail in
-Section 6.3. A related feature, injection, is discussed in Section 7.
+The expression `|x|` is a called a *splice*. It is replaced by an expression
+naming the entity designated by `x`, in this case the corresponding enumerator.
+The operand of a splice operator must be a constant reflection. This operator
+replaces the idexpr operator in P1240 (previously called unreflexpr). The reason
+for choosing a new notation is to find a uniform notation for inserting
+"snippets of code" into various program constructs. This concept is discussed in
+more detail in Section [](#splice). A related feature, source code injection, is
+discussed in Section [](#inject).
 
 ## Examples {#reflect.ex}
 
@@ -803,7 +794,7 @@ they designate the same entity. That is:
 t == d && d == x
 ```
 
-Note that splicing (Section 6.3) any of these reflections into a program
+Note that splicing (Section [](#splice)) any of these reflections into a program
 will yield the same *type-id*.
 
 ```cpp
@@ -858,17 +849,16 @@ meta::size_of(reflexpr(const int&)) == meta::size_of(reflexpr(int))
 This is consistent with the library definition of type traits---it also
 happens to make perfect sense.
 
-Depending on the language's treatment of compile-time side effects
-(Section 4.2), some concepts (or type traits) may not be implementable
-via reflection queries. The concept std::convertible is a prime example
-of such a concept. The reason for this is that computing the result
-requires lookup, which can result in template instantiations (i.e., side
-effects). Thus far, compile-time side effects have been considered
-transactional: they are committed or aborted after an evaluation has
-finished. In order to implement std::convertible using reflection,
-instantiations would have to be observable *during* the computation,
-which implies that there is no clean separation between evaluation and
-translation \[15\].
+Depending on the language's treatment of compile-time side effects (Section
+[](#constexpr.effect)), some concepts (or type traits) may not be implementable
+via reflection queries. The concept std::convertible is a prime example of such
+a concept. The reason for this is that computing the result requires lookup,
+which can result in template instantiations (i.e., side effects). Thus far,
+compile-time side effects have been considered transactional: they are committed
+or aborted after an evaluation has finished. In order to implement
+std::convertible using reflection, instantiations would have to be observable
+*during* the computation, which implies that there is no clean separation
+between evaluation and translation \[15\].
 
 ### Reflecting expressions {#reflect.reflexpr.expr}
 
@@ -881,12 +871,12 @@ an expression specifies a computation, it might also denote a
 (compile-time) value. Because values are entities, we should be able to
 access the value of constant expressions.
 
-There are few syntactic properties of expressions, namely their location
-and form. Whether the form of an expression can be queried is an
-open-ended design question. This essentially opens the door for
-tree-based traversal of expressions, which is a requirement for e.g.,
-automatic currying and automatic differentiation (Section 8.7). This is
-also important for macros that operate on syntax (Section 8.1).
+There are few syntactic properties of expressions, namely their location and
+form. Whether the form of an expression can be queried is an open-ended design
+question. This essentially opens the door for tree-based traversal of
+expressions, which is a requirement for e.g., automatic currying and automatic
+differentiation (Section [](#abstract.synth)). This is also important for macros
+that operate on syntax (Section [](#abstract.macro)).
 
 For any expression, we can query the following semantic properties:
 
@@ -896,8 +886,8 @@ For any expression, we can query the following semantic properties:
 - `meta::declaration_of(x)` yields the declaration of `x` if and only if
   `x` denotes an entity.
 
-For reflections of core constant expressions, we can access their value
-by splicing (Section 6.3.3) or injecting (Section 7.2.4) them into the
+For reflections of constant expressions, we can access their value by splicing
+(Section [](#splice.expr)) or injecting (Section [](#inject.code)) them into the
 program.
 
 Minimally, we must be able to reflect expressions that name enumerators,
@@ -1088,7 +1078,7 @@ int y = 42;
 Note that splices cannot synthesize new declarations. They are almost entirely
 referential, with the one exception being expression splices
 (Section [](#splice.expr)).
-The injection operator described in Section 7.2 can be used to create new
+The injection operator described in Section [](#inject.code) can be used to create new
 declarations.
 
 The following sections discuss various properties of the splice
@@ -1381,7 +1371,7 @@ P1240 also includes the ability to splice sequences of elements from
 ranges of reflections by placing the ellipsis inside a reifier (i.e.,
 splice) operation (e.g., `typename(...list)`). However, the design may
 not have fully baked. For example, it doesn't address the more complex
-pack expansion issues discussed in Section 5.1. I've redesigned this
+pack expansion issues discussed in Section [](#template.pack). I've redesigned this
 feature to build on top of that work and also remove the need for extra
 ellipses in cases where the expanded range is non-dependent.
 
@@ -1434,13 +1424,13 @@ The ability to splice packs of reflections significantly improves the
 metaprogramming capabilities of these features as much as the use of
 variadic templates has improved the ability to write generic code.
 
-This functionality relies on the semantics of structured binding packs,
-proposed in P1061 \[17\] and elaborated on by this document (Section
-5.1). In this case, the splice of a range (as in concept) of reflections
-introduces a *splice pack*. A splice pack of the form `|range|` is
-inherently pack-dependent and denotes an unexpanded pack. When expanded,
-the pattern is instantiated, replacing each reference to the splice pack
-with the *i*^th^ element of the splice's reflection range.
+This functionality relies on the semantics of structured binding packs, proposed
+in P1061 \[17\] and elaborated on by this document (Section [](#template.pack)).
+In this case, the splice of a range (as in concept) of reflections introduces a
+*splice pack*. A splice pack of the form `|range|` is inherently pack-dependent
+and denotes an unexpanded pack. When expanded, the pattern is instantiated,
+replacing each reference to the splice pack with the *i*^th^ element of the
+splice's reflection range.
 
 The problem gets more interesting when the splice operand is dependent.
 In this case, we allow an optional `...` to precede the operand,
@@ -1613,15 +1603,15 @@ The data member has this declaration:
 T |# %{member_name} #|;
 ```
 
-There are two new operators here (although both have been discussed in
-P1240 and P2050). The \|\# ... \#\| operator is the *identifier splice*.
-It takes its operand and generates an *unqualified-id* which will become
-the name of the data member (Section 6.3.9). The %{\...} operator is the
-*unquote operator*,[^13] which allows the values of local member
-variables of a metaprogram to be used in the specification of a fragment
-(Section 7.1.7). Ultimately, this declares a data member whose name is
-determined by the current value of member\_name, which happens to be
-"author" in the first injection declaration and "title" in the second.
+There are two new operators here (although both have been discussed in P1240 and
+P2050). The `|# ... #|` operator is the *identifier splice*. It takes its
+operand and generates an *unqualified-id* which will become the name of the data
+member (Section [](#splice.name)). The `%{\...}` operator is the *unquote
+operator*,[^13] which allows the values of local member variables of a
+metaprogram to be used in the specification of a fragment (Section [](#unquote).
+Ultimately, this declares a data member whose name is determined by the current
+value of `member_name`, which happens to be "author" in the first injection
+declaration and "title" in the second.
 
 The getter and the setter member functions are similarly defined.
 
@@ -1650,7 +1640,7 @@ is meta::info, which means that it is a reflection. Specifically, that
 value reflects the syntax between the angle brackets: a class,
 namespace, compound statement, expression, etc.[^14] A fragment value
 also contains the values of each unquote within the fragment. This is
-discussed in more detail in Sections 7.1.7 and 7.2.
+discussed in more detail in Sections [](#unquote) and [](#inject.code).
 
 For the most part, fragments are containers of other constructs. A class
 fragment does not really describe a class, it just describes members of
@@ -2017,7 +2007,7 @@ There are three ways to inject source code:
 - into an existing context, or
 - at a site determined by the current constant evaluation.
 
-The first two both use \<\< to denote an injection. I like the \<\<
+The first two both use `<<` to denote an injection. I like the `<<`
 operator to denote injection because of its connotation for streaming.
 An injection declaration
 
@@ -2030,12 +2020,12 @@ source code at this point in the file. However, this is not the only
 injection operation. We also support the ability to inject code into
 existing declarations using `<<` as an operator, which allows the
 injection of code into an existing class, namespace, or enumeration
-(Section 7.2.3).
+(Section [](#inject.op)).
 
 The third kind of injection is a little different because the target
 isn't obvious from the context. We are essentially "sending" code to be
 injected somewhere else in the program as a side effect. As such, I like
-the `->` notation that we use in P1717 (Section 7.2.4).
+the `->` notation that we use in P1717 (Section [](#inject.stmt)).
 
 Injection (as a process) is similar to instantiation, except that a)
 there are no explicit template parameters or arguments, and b) the
@@ -2175,7 +2165,7 @@ Thus far, our injection functions have worked with various kinds of
 fragments. However, it is also possible to inject copies of existing
 entities. This ability features heavily in practically all examples of
 metaclasses where members are copied from a prototype class into a
-destination class (Section 8.4).
+destination class (Section [](#abstract.metaclass)).
 
 For example, here is a small metaprogram that copies all data members of
 a class into a fragment.
@@ -2204,8 +2194,8 @@ struct structure_of {
 ```
 
 However, cloning a member also copies its semantic properties such as
-access specifiers. In this case, any private members of T will remain
-private in structure\_of. P1717 supports the ability to modify the
+access specifiers. In this case, any private members of `T` will remain
+private in `structure_of`. P1717 supports the ability to modify the
 specifiers of a declaration (including its name) as it is injected. To
 force all data members to be public, we would write this:
 
@@ -2309,7 +2299,7 @@ The features discussed in this section are largely sourced from others'
 proposals, albeit with some elaboration and massaging to make those
 ideas fit my long-term vision for metaprogramming. Some of the features
 in this section are also new inventions (e.g., compile-time I/O in
-Section 9). For the most part, these features are largely speculative
+Section [](#io)). For the most part, these features are largely speculative
 and would require significant work to move forward. However, I include
 them here because I think they have the potential to greatly improve the
 metaprogramming experience in C++.
@@ -2413,7 +2403,7 @@ print reflexpr(0)
 ```
 
 It would also be nice if we could pattern-match against the syntax of
-the expression in the style of Rust. Rust provides a mini grammar for
+the expression in the style of Rust, which provides a mini grammar for
 matching tree sub-expressions. However, because reflections are part of
 the regular language, we don't need to invent new syntax for matching;
 if statements can suffice. We do, however, need facilities for
@@ -2548,8 +2538,8 @@ that (ostensibly) make pair a regular type: destructible, default
 constructible, copy constructible, and equality comparable.
 
 The actual mechanism to make this work is a lexical trick; metaclasses
-are just syntactic sugar on top of the features described in Sections 6
-and 7. To the compiler, the actual definition of pair looks like this:
+are just syntactic sugar on top of the features described in Sections [](#reflect)
+and [](#inject). To the compiler, the actual definition of pair looks like this:
 
 ```cpp
 namespace __hidden {
@@ -2660,7 +2650,7 @@ struct Sub : Expr { ... };
 These kinds of hierarchies typically require a fair amount of incidental
 metaprogramming: organizing and assigning integer values for derived
 classes, implementing testing functions for conversion, and
-automatically generating visitor functions. The \<\<variant\>\>
+automatically generating visitor functions. The `<<`variant\>\>
 stereotype would be responsible for synthesizing all of that code for
 us.
 
@@ -2733,21 +2723,20 @@ public:
 };
 ```
 
-## Analyzers {abstract.analyze}
+## Analyzers {#abstract.analyze}
 
 It's possible to use attributes to invoke non-modifying checks over
 declarations to check for naming consistency, the presence or absence of
 operations, etc. Note that such tools would require access to the
 compiler's diagnostic facilities in order to provide coherent
-diagnostics (Section 9.1).
+diagnostics (Section [](#io.diag)).
 
 I suspect that purely read-only analyzers don't exist outside of other
-framework metaprogramming tools such as decorators (Section **Error!
-Reference source not found.**), transformers (Section **Error! Reference
-source not found.**), and metaclasses (Section 8.4). In other words,
-this will fall out of the ability to diagnose style or consistency
-issues related to a transformation for a specific framework (e.g., Qt
-objects).
+metaprogramming frameworks that use attributes (Section [](#abstract.attr)) or
+metaclasses and/or stereotypes (Sections [](#abstract.metaclass) and
+[](#abstract.stereo)). In other words, this will fall out of the ability to
+diagnose style or consistency issues related to a transformation for a specific
+framework (e.g., Qt objects).
 
 I don't believe that in-source analyzers can or should replace
 traditional static analysis tools. Because these kinds of analyzers are
@@ -2838,7 +2827,7 @@ ability to
 - inject that definition into a new function.
 
 This requires significant extensions to the reflection facilities and
-library (Section 6.2) so that the structure of statements and
+library (Section [](#reflect.reflexpr)) so that the structure of statements and
 expressions are available to metaprograms. We will also have to define a
 new API for the programmatic construction of (essentially) abstract
 syntax trees. I'm not entirely sure what these APIs should look like.
@@ -2853,7 +2842,7 @@ raises some very interesting prospects for application designers. This
 section explores the different kinds of input and output streams that
 could be available for metaprograms.
 
-## User-defined diagnostics {io.diag}
+## User-defined diagnostics {#io.diag}
 
 The idea of supporting custom diagnostics is not new. The static\_assert
 facility was originally designed to require a diagnostic, although that
@@ -2896,7 +2885,7 @@ the declaration.
 User-defined diagnostics should not be usable in non-constexpr code.
 Even in constexpr functions, we would have to ensure the diagnostic does
 not "leak into runtime". This is also true for compile-time tracing
-(Section 9.2).
+(Section [](#io.trace)).
 
 Interacting with a compiler's diagnostic system may be more involved
 than simply providing strings for output. For example, modern compilers
@@ -3087,10 +3076,10 @@ namespace app {
 }
 ```
 
-Note that the contents of a resource do not become a part of the
-translation unit. This is purely a way of getting data into a
-translation unit. This is also true for classes with resource
-constructors (Section 9.3.5) and resource adaptors (Section 9.3.6).
+Note that the contents of a resource do not become a part of the translation
+unit. This is purely a way of getting data into a translation unit. This is also
+true for classes with resource constructors and adaptors (Sections
+[](#io.file.rc.class) and [](#io.file.rc.adapt), respectively).
 
 ### Writing files {#io.file.write}
 
@@ -3456,7 +3445,7 @@ Dynamic injection includes the abilities to synthesize new code and
 incorporate it into a running executable. As with compile-time
 injection, there are two basic approaches to synthesizing new code: use
 pre-written patterns and instantiate them, or programmatically construct
-new code as e.g., abstract syntax trees (as in Section 8.7).
+new code as e.g., abstract syntax trees (as in Section [](#abstract.synth)).
 
 P1609 proposes a version of the first approach, which is essentially
 dynamic template instantiation \[44\]. The feature is reasonably
@@ -3481,14 +3470,14 @@ constructed programmatically.
 
 # Implementation experience {#impl}
 
-There is a significant amount of implementation experience for many of
-the features discussed sections 5, 6, 7. In particular, much of the
-static reflection and source code injection work has been implemented
-Clang by myself and Watt Childers, including basic support for
-metaclasses.[^26] However, we have not yet started work on more general
-abstraction facilities (e.g., macros) or compile-time file I/O. I
-understand that these features are concurrently being prototyped in
-EDG's frontend.
+There is a significant amount of implementation experience for many of the
+features discussed sections [](#template), 6 [](#reflect), 7 [](#inject). In
+particular, much of the static reflection and source code injection work has
+been implemented Clang by myself and Watt Childers, including basic support for
+metaclasses.[^26] That implementation uses the syntax defined (more or less)
+in P1240 and in P1717. We have not yet started work on more general
+abstraction facilities (e.g., macros) or compile-time file I/O. I understand
+that reflection is also being prototyped in EDG's frontend.
 
 # Roadmap {#roadmap}
 
@@ -3521,19 +3510,18 @@ this paper to record progress made and future goals.
 
 # Conclusions {#outro}
 
-This is a big paper that covers a lot of ground. Much of this
-paper---especially Sections 3 to 7---describes features that have
-already been proposed in other papers, although with somewhat different
-syntax and possibly different semantics. Section 8 (Abstraction
-Mechanisms) also pulls in ideas from previous proposals, but ensures
-that they are firmly rooted in a the metaprogramming system described in
-Section 3. Section 9 (Compile-time I/O) is largely new, especially the
-ideas around external resources. These ideas needed to be fleshed out so
-they wouldn't be left behind. I also think that the ability to directly
-incorporate external data into a program is arguably one of the most
-powerful features presented in this paper. More work is needed on
-runtime metaprogramming, but I am strongly of the opinion that that work
-cannot advance independently of compile-time metaprogramming.
+This is a big paper that covers a lot of ground. Much of this paper---especially
+Sections [](#constexpr) to [](#inject)---describes features that have already
+been proposed in other papers, although with somewhat different syntax and
+possibly different semantics. Section [](#abstract) (Abstraction Mechanisms)
+also pulls in ideas from previous proposals, but ensures that they are firmly
+rooted in a the metaprogramming system described in Section [](#system). Section
+[](#io) (Compile-time I/O) is largely new, especially the ideas around external
+resources. These ideas needed to be fleshed out so they wouldn't be left behind.
+I also think that the ability to directly incorporate external data into a
+program is arguably one of the most powerful features presented in this paper.
+More work is needed on runtime metaprogramming, but I am strongly of the opinion
+that that work cannot advance independently of compile-time metaprogramming.
 
 The metaprogramming system in this paper combines many different
 features from different sources and ideas into what I think is a
