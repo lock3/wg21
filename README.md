@@ -1,2 +1,3 @@
-# meta-paper
-The source text for the Metaprogramming paper.
+# WG21 Papers
+Source for publicly available WG21 papers and proposals.
+
