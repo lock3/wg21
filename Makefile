@@ -1,15 +1,22 @@
 
-default: paper.pdf paper.docx
+# Flags controlling the bibliography.
+bib_flags = --citeproc --csl ieee.csl \
+				    --bibliography paper.bib --bibliography wg21.bib
 
-paper.docx: paper.md
-	pandoc $< -s -o $@
+# Miscellanous rewrite filters
+lua_flags = -L ref.lua
 
-bib_flags=-C --csl ieee.csl --bibliography paper.bib --bibliography wg21.bib
-lua_flags=-L ref.lua
-pandoc_latexflags=-f markdown+citations -t latex -s -N ${bib_flags} ${lua_flags}
+common_flags = -f markdown+citations -s -N $(bib_flags) $(lua_flags)
+latex_flags = -t latex $(common_flags)
+# docx_flags = -t docx $(common_flags) --reference-doc=$(docx_path)/style.docx
+
+default: paper.pdf
+
+# paper.docx: paper.md
+# 	pandoc $(docx_flags) -o $@ $<
 
 paper.pdf: paper.md
-	pandoc $< ${pandoc_latexflags} -o $@
+	pandoc $(latex_flags) -o $@ $<
 
 .PHONY: clean paper.md
 

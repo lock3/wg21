@@ -2,4 +2,5 @@
 *.docx
 
 # Don't ignore publications
-!p2237r1.pdf
+# !p2237r1.pdf
+!d2237r1.pdf
