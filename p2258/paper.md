@@ -124,6 +124,9 @@ void f() {
 }
 ```
 
+Historically, repetition of keywords is seen as a design failure by the broader
+C++ community (even when it is not).
+
 It seems like there should be some contexts in which the extra annotations
 can be elided because only a limited subset of terms are allowed. In the
 declaration of `var` the spliced term can only be a *nested-name-specifier*
@@ -177,12 +180,19 @@ FIXME: Write this.
 
 # Suggestion
 
-Adopt `[<` and `>]` as enclosing token pairs for splices.[^tokens] These are
-visually distinctive, easily greppable, and don't have weird lexical issues
+We probably want something between the distinctive terseness of P2273 and the
+specificity of P1240. However, we should try to avoid unnecessary repetition
+of keywords, and we should avoid requiring keywords in contexts where they
+are not needed.
+
+We suggest the following:
+
+First, adopt `[<` and `>]` as enclosing token pairs for splices.[^tokens] These
+are visually distinctive, easily greppable, and don't have weird lexical issues
 combining with other tokens. It's tempting to make these distinct tokens, but
 doing so could break existing code (e.g., `arr[trait_v<x>]`). We considered
 `[|x|]` but were concerned that it was too visually similar to attribute
-notation. The `<>`'s also have a nice relationship with the source code 
+notation. The `<>`'s also have a nice relationship with the source code
 fragments notation in P2237.
 
 Without additional qualification or context, `[<x>]` is an primary expression
@@ -191,15 +201,15 @@ function, data member, or bitfield. This is essentially `idexpr` in P1240.
 For example:
 
 ```cpp
-template<meta::info t, // reflects a type
-         meta::info e> // reflects a variable
+template<meta::info t, // reflects a type T
+         meta::info v> // reflects a variable V
 void f() {
-  cout << [<e>]; // OK: prints what e reflects
-  [<t>];         // error: t is not an expression
+  cout << [<e>]; // OK: prints the value of V
+  [<t>];         // error: T is not an expression
 }
 ```
 
-The error from using `t` occurs during instantiation, not parsing.
+Note that the error from using `t` occurs during instantiation, not parsing.
 
 Modify the grammar to permit additional uses of the splice notation to produce
 different kinds of reflections.
@@ -210,13 +220,13 @@ template<meta::info t, // reflects a type T
 void f() {
   typename [<t>] *p;    // OK: declares a pointer-to-T
   typename [<t>](0, 1); // OK: constructs a T temporary
+  [<t>](0, 1);          // error: T is not invocable
   template [<x>]<int> var; // OK: declares var with type X<int>
 }
 ```
 
-Note that in these contexts the splice notation is not an expression.
+In these contexts the splice is not an expression.
 
-
-
+FIXME: Add whatever the solution for template arguments is.
 
 # References
