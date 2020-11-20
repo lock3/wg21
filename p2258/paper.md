@@ -107,7 +107,11 @@ readers better understand that the code should be interepreted differently than
 "normal" C++.  Visually, the `|x|` notation is intended to resemble a "gap" in
 the flow of the source text, which is filled by the reflection `x`.
 
-# P1240 Evaluation
+# Evlauation {#eval}
+
+This section examines some weaknesses of the proposed approaches.
+
+## P1240 Evaluation {#eval.p1240}
 
 The splice notation in P1240 are not very visually distinctive. It's easy,
 especially for non-experts, to mistake `typename(x)` as being somehow related
@@ -134,9 +138,9 @@ and `x` must reflect a class or namespace. P0634 identified a number of
 cases where extra annotations could be elided [@P0634R1].
 
 Note that allowing the ellision of the 2nd `typename` above effectively means
-that we would need splice notation: `(x)` is not a viable choice.
+that we would need a new splice notation as `(x)` is not a viable choice.
 
-# P2237 Evluation
+## P2237 {#eval.p2237}
 
 Parsing for P2237's splice notation is interesting but not overly complex
 in non-dependent cases. Because the operand is a constant expression, we
@@ -174,65 +178,113 @@ other `|` tokens such as the proposed pipeline rewrite operator. [@P2011R0]
 
 All other considerations aside, this alone kills the plain `|x|` notation.
 
-# Universal template arguments
+<!--
+# Adaptive splice {#adapt}
 
-# Suggestion
+One of the more interesting aspets of splicing is that it gives rise to a novel
+form of dependence, which we call reflection dependence. A splice is *reflection
+dependent* if its operand is type-dependent or value-dependent, meaning that
+the splice can belong to any syntactic categories. Consider:
+
+```cpp
+template<typname t, int n, meta::info x>
+void f() {
+  vector<t> vec1;     // OK
+  vector<n> vec2;     // error: n is not a type
+  vector<typename(x)> vec3; // P1240 OK
+  vector<[<x>]> vec3; // P1240 Deferred check
+  vector<|x|> vec3;   // P2237 Deferred check
+}
+```
+
+In many cases, the language provides a good level of checking in templates,
+which results in `vector<t>` being accepted and `vector<int>` being rejected.
+Because we don't kow the value of `x`, we can't determine its syntactic category
+at parse time. 
+
+In P1240, the user could specify the template argument as `typename(x)`, which
+can be checked at parse time, although instantiating with any other kind of
+reflection would result in a type error during instantiation. However, writing
+the template argument as `[<x>]` would explicitly defer the check until
+instantiation time.[^templarg] When `x` is instantiated, the splice becomes
+a type, template, or expression splice depending on the entity reflected by
+`x`.
+
+
+Because P2237 does not support explicit kinding of splices, the checking of all
+spliced template arguments are deferred until instantiation.
+In both cases, we could describe the template argument splice as "adaptive".
+
+[^templarg]: The Clang implementation spells this `templarg(x)`.
+
+Adaptive splices are most useful when forwarding reflections of template
+arguments through parameter packs:
+
+```cpp
+template<meta::info... xs>
+void f() {
+  // Assuming various template overloads of g
+  g<[xs|...>();   // P2237
+  g<[<...xs>]>(); // P1240
+}
+```
+
+No parse-time checking of template arguments is done here.
+-->
+
+# Splice notation
 
 We probably want something between the distinctive terseness of P2273 and the
-specificity of P1240. However, we should try to avoid unnecessary repetition
-of keywords, and we should avoid requiring keywords in contexts where they
-are not needed.
+specificity of P1240. However, we should try to avoid unnecessary repetition of
+keywords, and we should avoid requiring keywords in contexts where they are not
+needed. The following sections present potential splicing notations that fall
+within that spectrum. There three notations discussed:
 
-We suggest the following:
+- a single bracketed splice notation (`[|x|]`),
+- multiple bracketed splice operators (`[|e|]`, `[/t/]`, etc.), and
+- a unary splice operator (e.g., `%x`).
 
-First, adopt `[<` and `>]` as enclosing token pairs for splices.[^tokens] These
-are visually distinctive, easily greppable, and don't have weird lexical issues
-combining with other tokens. It's tempting to make these distinct tokens, but
-doing so could break existing code (e.g., `arr[trait_v<x>]`). We considered
-`[|x|]` but were concerned that it was too visually similar to attribute
-notation. The `<>`'s also have a nice relationship with the source code
-fragments notation in P2237.
+We also discuss the impact that strongly typed reflections might have on the
+splice notation.
 
-Without additional qualification or context, `[<x>]` is an primary expression
+## Bracketed single splice
+
+One approach is to adopt `[|` and `|]` as enclosing token pairs for splices.
+These are visually distinctive, easily greppable, and don't have weird lexical
+issues combining with other tokens. This notation may be too visually similar to
+attribute syntax (`[[` and `]]`), which may motivate a change in the future.
+
+Without additional qualification or context, `[|x|]` is a primary expression
 that produces an *id-expression* referring to a function, variable, member
 function, data member, or bitfield. This is essentially `idexpr` in P1240.
 For example:
 
 ```cpp
 template<meta::info t, // reflects a type T
-         meta::info v> // reflects a variable V
+         meta::info v, // reflects a variable V
+         meta::info x> // reflects a non-static data member m in T
 void f() {
-  cout << [<e>]; // OK: prints the value of V
-  [<t>];         // error: T is not an expression
+  cout << [|e|];   // OK: prints the value of V
+  cout << t.[|x|]; // OK: prints the value of t.m
+  [|t|];           // error: T is not an expression
 }
 ```
 
 Note that the error from using `t` occurs during instantiation, not parsing.
 
-Splices can also appear after `.` and `->` *postfix-expression*s.
-
-```cpp
-template<meta::info x> // reflects a non-static data member m in T
-void f(T& t) {
-  cout << t.[|x|]; // OK: prionts the value of t.m
-}
-```
-
-Modify the grammar to permit additional uses of the splice notation to produce
-different kinds of reflections.
+We can then the grammar to permit splices of types, templates, and namespaces
+in other contexts:
 
 ```cpp
 template<meta::info t, // reflects a type T
          meta::info x> // reflects a template X
 void f() {
-  typename [<t>] *p;    // OK: declares a pointer-to-T
-  typename [<t>](0, 1); // OK: constructs a T temporary
-  [<t>](0, 1);          // error: T is not invocable
-  template [<x>]<int> var; // OK: declares var with type X<int>
+  typename [|t|] *p;    // OK: declares a pointer-to-T
+  typename [|t|](0, 1); // OK: constructs a T temporary
+  [|t|](0, 1);          // error: T is not invocable
+  template [|x|]<int> var; // OK: declares var with type X<int>
 }
 ```
-
-In these contexts the splice is not an expression.
 
 Here is the complete list of cases where the grammar would need to be modified
 to support splices. Here, `type` reflects a type, `temp` reflects a template
@@ -256,7 +308,193 @@ foo::[|type|]::id
 foo::[|ns|]::id
 foo::template [|temp|]<int>::id
 
-// FIXME: Others?
+// FIXME: Others? Using declarations?
 ```
+
+The `typename template` notation is unfortunate but unavoidable (even in P1240).
+Reflections have a kind of higher-order dependence than normal type or value
+dependent terms. For example, unlike template template parameters, we don't
+whether a template reflection reflects a class template, function template, or
+variable template. When a refleciton is value-dependent, we need the `template`
+to parse the *template-argument-list*, and we need the `typename` to ensure
+the entire term is parsed as a *type-specifier*. The latter avoids this
+ambiguity:
+
+```cpp
+template [|temp|]<int> * p // multiplication by p
+typename template [|temp|]<int> * p // declaration of a pointer p
+```
+
+Keywords are not required in other contexts (e.g., *base-specifier*s)
+because only one kind of term can appear:
+
+```cpp
+template<meta::info x> // reflects a template
+struct s : [|x|]<int> { ... };
+```
+
+## Multiple bracketed splice notations
+
+We don't need to limit ourselves to a single splice notation. We could choose to
+use different splice brackets for the different kinds of grammars being inserted
+into the programmer. In fact, P1240 does this for two of its reifiers:
+identifiers (`[:x:]` and template arguments (`[<x>]`). The identifier splice
+(`|#x#|`) in P2237 can also be considered an application of this approach.
+Template Haskell takes a similar approach with its splice operator(s).
+
+```cpp
+[|expr|] // splice an expression
+[/type/] // splice a type
+[<temp>] // splice a template
+[:ns:]   // splice a namespace
+```
+
+The choice of some brackets here approximate some aspect of the thing reflected:
+template-ids have `<>`s and namespaces appear in *nested-name-specifier*s. The
+choice of brackets for expressions and types are chosen somewhat arbitrarily
+(types appear in italics?).
+
+The benefit of this approach is that eliminates the need for keywords in many
+contexts:
+
+```cpp
+// template-id
+[<temp>]<int>
+
+// simple-type-specifier
+[/type/]
+foo::[/type/]
+
+// typename specifier
+typename [<temp>]<int>
+typename foo::[<temp>]<int>
+
+// nested-name-specifiers
+[/type/]::id
+[:ns:]::id
+[<temp>]<int>::id
+foo::[/type/]::id
+foo::[:ns:]::id
+foo::[<temp>]<int>::id
+
+// FIXME: Others? Using declarations?
+```
+
+Note that we still need a leading `typename` when the splicing a template-id
+as a type. That seems unavoidable.
+
+The downside of this notation is that it can be a bit cryptic. It also means
+that programmers have to choose the right splice notation in contexts where
+only one would be allowed.
+
+## Unary single splice
+
+There's not strict requirement for splice notation to be bracketed. The design
+in P2237 prefers brackets for its visual appeal, but we could easily choose
+do this with a unary operator, replacing the suggested `[<x>]` notation with
+with, say, `%x`.
+
+As above, without qualification any splice is an expression:
+
+```cpp
+template<meta::info v, // reflects a variable
+         meta::info x> // reflects a non-static data member m in T
+void f(T& t) {
+  cout << %x;   // OK: prints the value of V
+  cout << t.%x; // OK: prionts the value of t.m
+}
+```
+
+For a splice of anything else (in certain contexts), keywords are required.
+
+```cpp
+// unqualified-id (as an expression)
+template %temp<int>
+
+// typename-specifier
+typename %type
+typename template %temp<int>
+typename foo::%type
+typename foo::template %temp<int>
+
+// nested-name-specifiers
+%type::id
+%ns::id
+template %temp<int>::id
+foo::%type::id
+foo::%ns::id
+foo::template %temp<int>::id
+
+// FIXME: Others? Using declarations?
+```
+
+If we choose this direction, then we should also choose notation for the
+`reflexpr` operator so that they naturally complement eachother. For example,
+we could choose `/` for the reflection operator.
+
+```cpp
+constexpr meta::info x = /int; // reflect
+int n = %x;                    // splice
+```
+
+Or we could choose `\` (yes, backslash) as the splice operator.
+
+```cpp
+constexpr meta::info x = /int; // reflect
+int n = \x;                    // splice
+```
+
+We could also choose to make the splice operator a suffix instead of a prefix.
+
+```cpp
+constexpr meta::info x = /int; // reflect
+int n = x\;                    // splice
+```
+
+Giving the operator lower precedence than a unary operator would allow this
+somewhat novel construction:
+
+```cpp
+/int\ // splices the reflection of int (i.e., identity)
+```
+
+A downside of this approach is that single character unary operators are not
+particularly visually distinctive.
+
+## Type-based splicing
+
+We should also consider how splicing works in the context of strongly typed
+reflections. If we move to a system where we know more about the constructs
+reflected by an entity, then we can elide certain keywords. This works
+particularly well with a single splice notation:
+
+```cpp
+template<meta::type_info t,
+         meta::expr_info e>
+void f() {
+    [|t|] * p; // declares a pointer
+    [|e|] * p; // multiplies by p
+}
+```
+
+And it provides stronger checks with multiple splice notations:
+
+```cpp
+template<meta::type_info t,
+         meta::expr_info e>
+void f() {
+    [|t|] * p; // error: t does not reflect an expression
+    [/e/] * p; // error: e does not reflect a type
+}
+```
+
+Note that this feature could be applied as an extension to the notations above,
+but not as an alternative. Templates can still be parameterized by the most
+general kind of reflection (`meta::info`).
+
+# Conclusions
+
+After lengthy discussions and negotiations, we strongly recommend XXX as the
+splicing notation for static reflection.
 
 # References
