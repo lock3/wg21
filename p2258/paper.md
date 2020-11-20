@@ -176,8 +176,6 @@ All other considerations aside, this alone kills the plain `|x|` notation.
 
 # Universal template arguments
 
-FIXME: Write this.
-
 # Suggestion
 
 We probably want something between the distinctive terseness of P2273 and the
@@ -211,6 +209,15 @@ void f() {
 
 Note that the error from using `t` occurs during instantiation, not parsing.
 
+Splices can also appear after `.` and `->` *postfix-expression*s.
+
+```cpp
+template<meta::info x> // reflects a non-static data member m in T
+void f(T& t) {
+  cout << t.[|x|]; // OK: prionts the value of t.m
+}
+```
+
 Modify the grammar to permit additional uses of the splice notation to produce
 different kinds of reflections.
 
@@ -227,6 +234,29 @@ void f() {
 
 In these contexts the splice is not an expression.
 
-FIXME: Add whatever the solution for template arguments is.
+Here is the complete list of cases where the grammar would need to be modified
+to support splices. Here, `type` reflects a type, `temp` reflects a template
+with a single type parameter, and `ns` reflects a namespace.
+
+```cpp
+// unqualified-id (as an expression)
+template [|temp|]<int>
+
+// typename-specifier
+typename [|type|]
+typename template [|temp|]<int>
+typename foo::[|type|]
+typename foo::template [|temp|]<int>
+
+// nested-name-specifiers
+[|type|]::id
+[|ns|]::id
+template [|temp|]<int>::id
+foo::[|type|]::id
+foo::[|ns|]::id
+foo::template [|temp|]<int>::id
+
+// FIXME: Others?
+```
 
 # References
