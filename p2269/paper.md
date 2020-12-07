@@ -13,7 +13,7 @@ geometry:
 ---
 
 --------- --------
- Document XXXX
+ Document P2269R0
  Audience SG7
 --------- ---------
 
@@ -23,19 +23,16 @@ This paper considers a change to the P1240 model of static reflection, that
 would allow for multiple, interconvertible reflection types that correspond
 (roughly) to the construct or entities reflected.
 
-Bob Lob Law.
-
-
 # Background
 
-P09532 proposes a hierarchical representation of reflections [@P0953R2].
-Despite the advantages of having typed reflections (especially modern
-programming techniques), there are some unfortunate drawbacks. First, the use of
-class objects during constant expression evaluation can significantly inflate
-compile times. That could be particularly bad for heavily metaprogrammed
-translation units. Second, interrelated systems of types are hard to evolve. A
-change in the relationship between types in the system will break more code than
-a change to a single type, which breaks more code than a change to a function.
+P09532 proposes a hierarchical representation of reflections [@P0953R2]. Despite
+the advantages of having typed reflections (especially modern programming
+techniques), there are two drawbacks. First, the use of class objects during
+constant expression evaluation can significantly inflate compile times. That
+could be particularly bad for heavily metaprogrammed translation units. Second,
+interrelated systems of types are hard to evolve. A change in the relationship
+between types in the system will break more code than a change to a single type,
+which breaks more code than a change to a function.
 
 In P1240, all reflections are represented by a single scalar type: `meta::info`
 [@P1240R1].
@@ -69,51 +66,100 @@ for achieving this.
 There are two sources of reflection values: the reflection operator (`^`)
 and `meta` library functions. The former is used to directly access information
 about a source code construct, while the latter is used to navigate between
-them. 
+them.
+
+There are four possible facets of a reflection.
+
+- Entity---the semantic elements of a program.
+- Name---the use of a term to refer to a (possibly declared) entity.
+- Declaration---introduce entities or aliases for entities.
+- Expression---the use of a term to denote an entity or compute value.
+
+The "name" category is more general than in the standard. A *type-id* is a kind of
+name. Note that names emphasize *use*, not existence. These are (a subset) of
+operands of the reflection operator.
+
+An entity declaration introduces a distinct entity and is defined according to
+its kind (a variable is defined by its initializer, a function is defined by its
+body, a class is defined by its specification, etc.). An alias declaration is
+defined to be a name.
+
+For expressions, we can only access the denotation or value if it is known
+statically.
+
+Every reflection is always comprised of two or more facets?
+
+- A reflection of `std::size_t` is a name of an alias defined as (possibly)
+  `unsigned long`.
+- An *expression* can have all of them.
+
+FIXME: What is the type of a reflection.
+
 
 This system defines overlapping subsets of reflection values by defining a
 small-ish number of reflection types. The names of these types all end in
-`_info`. A reflection type provides access to various syntactic and semantic
-properties reachable from the reflection value, such as
+`_info`. A reflection type provides access to the union of syntactic and
+semantic properties reachable from the reflection value, which can include:
 
-- the use of a name,
+- the use of a name (or name-like grammar term),
 - the declaration of a name, and
 - the entity declared by a declaration.
 
-The set of properties depends on the kind of construct reflected.
-
-The reflection operator can produce the following types of reflections.
+The set of properties depends on the kind of construct reflected, which is
+determined by the operand (and consequently type) of the reflection operator.
 
 ```cpp
-constexpr meta::expression_info e = ^0;
-constexpr meta::type_info t = ^int;
-constexpr meta::namespace_info ns = ^std;
+// Entity reflections
+constexpr meta::function_info fn = ^main;
+constexpr meta::variable_info var = ^argc;
+constexpr meta::type_info t = ^std::size_t;
 constexpr meta::template_info tmp = ^std::pair;
-constexpr meta::concept_info c = ^std::integral;
+constexpr meta::concept_info con = ^std::integral;
+constexpr meta::namespace_info ns = ^std;
+
+// Expression reflections
+constexpr meta::expression_info e = ^0;
 ```
 
-We call this set of types the *primary reflection types*.
+The type of the reflection operator is that which most closely describes the
+thing reflected. Tor types, templates, concepts, and namespaces, reflection
+straightforward. For example, a reflection of `std::size_t` only ever reflects
+(the use and declaration of) a type. The reflections of `main` and `argc` are
+reflections if both *expression*s (having a type and value category) and the
+(declared) entities.
 
-These types represent non-overlapping subsets of reflection values, meaning
-they are not implicitly interconvertible (i.e., an expression is never a type).
-Briefly, these types have the following properties:
+When returned from the reflection operator, the following properties can be
+queried:
 
-- An `expression_info` represents the syntactic and semantic properties of an
-  expression, including the declaration found by an id-expression and its
-  corresponding value, object, reference, function, data member, or bit-field.
+- A `function_info` can be used to query the properties of the *id-expression*
+  naming the declaration of a function, the properties of that declaration,
+  and the semantic properties of the declared entity.
+- A `variable_info` can be used to query the properties of the *id-expression*
+  naming the declaration of an object or reference, the properties of that
+  declaration, and the semantic properties of the declared entity.
+
+
+- A `variable_info` represents the syntactic and semantic properties of the
+  *id-expression* naming the declaration of an object or reference.
 - A `type_info` represents the syntactic and semantic properties of a *type-id*
   including its declaration (if any) and corresponding type. This can also
   describe *base-specifier*s.
-- A `namespace_info` represents the syntactic and semantic properties of a
-  *qualified-namespace-specifier* and its corresponding namespace.
 - A `template_info` represents the syntactic and semantic properties of a
   (possibly qualified) *template-name* and its corresponding template.
 - A `concept_info` represents the syntactic and semantic properties of a
   (possibly qualified) *template-name* naming a concept and its corresponding
   entity.[^concepts]
+- An `expression_info` is reflects the syntactic and semantic properties of
+  an expression described below.
+- A `namespace_info` represents the syntactic and semantic properties of a
+  *qualified-namespace-specifier* and its corresponding namespace.
 
-[^concepts]: C++20 does not define concepts to be distinct from templates, but
-it probably should.
+represents the syntactic and semantic properties of an expression, including the
+  declaration of an *id-expression* and its corresponding value, object,
+  reference, function, data member, or bit-field.
+
+[^concepts]: C++20 does not define concepts to be a distinct entity from
+templates, but it probably should.
 
 When we talk of *syntactic properties*, we are concerned with properties
 related to the actual spelling of the source code reflected. Source location
@@ -139,7 +185,7 @@ The reflection types above can be converted to `declaration_info` in various
 cases.
 
 - An `expression_info` can be converted to a `declaration_info` if it reflects
-  *id-expression*.
+  *id-expression* denoting a single entity.
 - A `type_info` can be converted to a `declaration_info` if it reflects a 
   (possibly qualified) *type-name*.
 - A `namespace_info` can be converted to a `declaration_info`.
