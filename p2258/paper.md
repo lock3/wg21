@@ -20,14 +20,14 @@ geometry:
 # Introduction {#intro}
 
 This paper considers alternative syntax for splice notation for static
-reflection. Splicing (previsouly "reification" in P1240) is the inverse of
+reflection. Splicing (previously "reification" in P1240) is the inverse of
 reflection: it inserts a reference to a reflected entity or expression into a
 program [@P1240R1].
 
 For the purpose of brevity, this paper uses the suggested unary `^` operator
 as the reflection operator as opposed to `reflexpr`.
 
-The P1240 paper proposal descibes `constexpr`-based support for static
+The P1240 paper proposal describes `constexpr`-based support for static
 (compile-time) reflection to C++. One of the main components of that proposal
 is the ability to insert (or splice) references to reflected entities back
 into the program. 
@@ -47,7 +47,7 @@ than other splice operators.
 For example, `typename(^int)` will generate the *type-id* `int` and
 `valueof(^int)` will yield the *constant-expression* 0.
 
-P2237R0 suggests considerably differnt syntax for splicing: there is only one
+P2237R0 suggests considerably different syntax for splicing: there is only one
 splice operator, which is to enclose a reflection in `|` tokens [@P2237R0]. For
 example, `|^int|` yields the *type-id* `int` and `|^0|` yields the
 *constant-expression* 0.
@@ -65,7 +65,7 @@ a number of good reasons to do this:
 - The correspondence between a splice operator's name and its generated syntax
   simplifies the implementation.
 - There are no template dependency issues that require different syntax in
-  templates, since spliced terms are explicity qualified by their operator.
+  templates, since spliced terms are explicitly qualified by their operator.
 
 However, the explicitness of this design can lead to more verbose code:
 
@@ -93,7 +93,7 @@ void f(T n) {
 }
 ```
 
-This minimal notation makes the programming model decidely script-like since
+This minimal notation makes the programming model decidedly script-like since
 there are relatively few annotations. The programmer says where reflections will
 be spliced into the program, but not what kind of reflections are expected or
 what kind of syntax is being generated. The meaning of a splice inferred from
@@ -103,22 +103,23 @@ splice in the wrong context will cause the program to be ill-formed, not
 incorrect.
 
 Making notation distinct and unfamiliar is intended to draw the eye, so that
-readers better understand that the code should be interepreted differently than
-"normal" C++.  Visually, the `|x|` notation is intended to resemble a "gap" in
-the flow of the source text, which is filled by the reflection `x`.
+readers better understand that the code should be interpreted differently than
+"normal" C++. Visually, the `|x|` notation is intended to resemble a "gap" in
+the flow of the source text, which is filled by the entity or expression
+reflected by `x`.
 
-# Evlauation {#eval}
+# Evaluation {#eval}
 
 This section examines some weaknesses of the proposed approaches.
 
 ## P1240 Evaluation {#eval.p1240}
 
-The splice notation in P1240 are not very visually distinctive. It's easy,
+The splice notations in P1240 are not very visually distinctive. It's easy,
 especially for non-experts, to mistake `typename(x)` as being somehow related
 to a *typename-specifier*. After all, in many contexts, parentheses are used
 only for grouping.
 
-The required use keywords can lead to some unfortunate compositions. For
+The required use of keywords can lead to some unfortunate compositions. For
 example:
 
 ```cpp
@@ -137,7 +138,7 @@ declaration of `var` the spliced term can only be a *nested-name-specifier*
 and `x` must reflect a class or namespace. P0634 identified a number of
 cases where extra annotations could be elided [@P0634R1].
 
-Note that allowing the ellision of the 2nd `typename` above effectively means
+Note that allowing the elision of the 2nd `typename` above effectively means
 that we would need a new splice notation as `(x)` is not a viable choice.
 
 ## P2237 {#eval.p2237}
@@ -173,7 +174,7 @@ int z = ||^y||; // error: expected expression
 
 In order to parse that as a nested splice (yes, splices can nest), the parser
 would have to perform some seriously speculative lexical gymnastics. Similar
-(but resolvable) issues arise when the splice appears in juxtoposition to
+(but resolvable) issues arise when the splice appears in juxtaposition to
 other `|` tokens such as the proposed pipeline rewrite operator. [@P2011R0]
 
 All other considerations aside, this alone kills the plain `|x|` notation.
@@ -313,12 +314,11 @@ foo::template [|temp|]<int>::id
 
 The `typename template` notation is unfortunate but unavoidable (even in P1240).
 Reflections have a kind of higher-order dependence than normal type or value
-dependent terms. For example, unlike template template parameters, we don't
+dependent terms. For example, unlike template template parameters, we don't know
 whether a template reflection reflects a class template, function template, or
-variable template. When a refleciton is value-dependent, we need the `template`
-to parse the *template-argument-list*, and we need the `typename` to ensure
-the entire term is parsed as a *type-specifier*. The latter avoids this
-ambiguity:
+variable template. When a reflection is value-dependent, we need the `template`
+to parse the *template-argument-list*, and we need the `typename` to ensure the
+entire term is parsed as a *type-specifier*. The latter avoids this ambiguity:
 
 ```cpp
 template [|temp|]<int> * p // multiplication by p
@@ -380,8 +380,8 @@ foo::[<temp>]<int>::id
 // FIXME: Others? Using declarations?
 ```
 
-Note that we still need a leading `typename` when the splicing a template-id
-as a type. That seems unavoidable.
+Note that we still need a leading `typename` when splicing a *template-id* as a
+type. That seems unavoidable.
 
 The downside of this notation is that it can be a bit cryptic. It also means
 that programmers have to choose the right splice notation in contexts where
@@ -390,9 +390,9 @@ only one would be allowed.
 ## Unary single splice
 
 There's not strict requirement for splice notation to be bracketed. The design
-in P2237 prefers brackets for its visual appeal, but we could easily choose
-do this with a unary operator, replacing the suggested `[<x>]` notation with
-with, say, `%x`.
+in P2237 prefers brackets for its visual appeal, but we could easily choose to
+do this with a unary operator, replacing the suggested `[<x>]` notation with,
+say, `%x`.
 
 As above, without qualification any splice is an expression:
 
@@ -401,7 +401,7 @@ template<meta::info v, // reflects a variable
          meta::info x> // reflects a non-static data member m in T
 void f(T& t) {
   cout << %x;   // OK: prints the value of V
-  cout << t.%x; // OK: prionts the value of t.m
+  cout << t.%x; // OK: prints the value of t.m
 }
 ```
 
@@ -429,7 +429,7 @@ foo::template %temp<int>::id
 ```
 
 If we choose this direction, then we should also choose notation for the
-`reflexpr` operator so that they naturally complement eachother. For example,
+`reflexpr` operator so that they naturally complement each other. For example,
 we could choose `/` for the reflection operator.
 
 ```cpp
@@ -452,7 +452,7 @@ int n = x\;                    // splice
 ```
 
 Giving the operator lower precedence than a unary operator would allow this
-somewhat novel construction:
+somewhat clever construction:
 
 ```cpp
 /int\ // splices the reflection of int (i.e., identity)
@@ -469,8 +469,7 @@ reflected by an entity, then we can elide certain keywords. This works
 particularly well with a single splice notation:
 
 ```cpp
-template<meta::type_info t,
-         meta::expr_info e>
+template<meta::type_info t, meta::expr_info e>
 void f() {
     [|t|] * p; // declares a pointer
     [|e|] * p; // multiplies by p
