@@ -13,7 +13,6 @@ function populate_section_numbers (doc)
       end
     end
   end
-
   populate(make_sections(true, nil, doc.blocks))
 end
 
@@ -23,13 +22,13 @@ function resolve_section_ref (link)
   end
   local number = section_numbers[link.target];
   if number == nil then
-    print("warning: unresolved reference", link.target)
+    print("Warning: unresolved reference: ", link.target)
     return pandoc.Str("Unresolved reference");
   end
   return pandoc.Link({pandoc.Str(number)}, link.target, link.title, link.attr)
 end
 
 return {
-  {Pandoc = populate_section_numbers},
-  {Link = resolve_section_ref}
+  {Pandoc = populate_section_numbers}, -- The global pandoc filter
+  {Link = resolve_section_ref}         -- The link resolution filter
 }

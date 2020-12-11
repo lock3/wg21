@@ -45,7 +45,7 @@ we won't consider for this paper, as its intended purpose is quite different
 than other splice operators.
 
 For example, `typename(^int)` will generate the *type-id* `int` and
-`valueof(^int)` will yield the *constant-expression* 0.
+`valueof(^0)` will yield the *constant-expression* 0.
 
 P2237R0 suggests considerably different syntax for splicing: there is only one
 splice operator, which is to enclose a reflection in `|` tokens [@P2237R0]. For
@@ -56,16 +56,17 @@ example, `|^int|` yields the *type-id* `int` and `|^0|` yields the
 
 The design of P1240 is rooted in the idea that the spelling of a splice operator
 should indicate the grammar term being inserted into the program. There are a
-a number of good reasons to do this:
+number of good reasons to do this:
 
 - The use of keywords is an obvious hint to readers about the kind of term
   being spliced into the program.
-- The operator name also provides course-grained requirements on the value of
+- The operator name also provides coarse-grained requirements on the value of
   the reflection.
 - The correspondence between a splice operator's name and its generated syntax
   simplifies the implementation.
 - There are no template dependency issues that require different syntax in
   templates, since spliced terms are explicitly qualified by their operator.
+- No disambiguation is needed in injected code.
 
 However, the explicitness of this design can lead to more verbose code:
 
@@ -108,6 +109,53 @@ readers better understand that the code should be interpreted differently than
 the flow of the source text, which is filled by the entity or expression
 reflected by `x`.
 
+## Dependence
+
+The introduction of templates in C++ brought about situations where the grammar
+category of a name (i.e., is it a type, a template, a namespace, or something
+else?) is no longer known. When it was decided that templates ought to be
+parsable in their generic form (i.e., before instantiation), this required the
+introduction of disambiguators for template-dependent names: `typename`,
+`.template`, `->template`, and `::template`. Unfortunately, this has proven to
+be a major hindrance to programmers, both new and experienced, because it is so
+easy to overlook that the disambiguator is needed.
+
+An essential component of the direction we’re envisioning for C++
+metaprogramming is code injection, and that brings with it a new kind of
+dependence (“parametric dependence”?). Consider:
+
+```cpp
+void do_inject(meta::info refl) {
+  << { |refl| * ptr = nullptr; };
+}
+```
+
+The splice in the injected fragment transforms an unknown reflection value, and
+therefore it cannot be parsed without some help. At first sight, `|refl| * ptr =
+nullptr` looks like a pointer declaration, but it could also be an assignment to
+the result of a multiplication. So we’d need some kind of disambiguation here.
+Maybe:
+
+```cpp
+void do_inject(meta::info refl) {
+  << { typename |refl| * ptr = nullptr; };
+}
+```
+
+This is similar to the typename disambiguator in templates, but a little
+different because it is not limited to qualified names. In fact, we can
+anticipate that just about every splice in injected code will be “dependent” in
+this way (although in some cases, the context might not require disambiguation).
+
+It’s also worth pointing out that we anticipate the ability to reflect on
+namespaces, which might therefore need their own disambiguator; in contrast,
+there are no template-dependent namespaces (yet). However, namespace names are
+mostly used either in contexts where they’re known to name a namespace (after
+the keyword namespace) or in contexts where a type name does not change the
+dependent semantics (preceding a `::` token or as the operand of the reflection
+operator). That observation might obviate the need for a namespace-specific
+disambiguator.
+
 # Evaluation {#eval}
 
 This section examines some weaknesses of the proposed approaches.
@@ -129,8 +177,9 @@ void f() {
 }
 ```
 
-Historically, repetition of keywords is seen as a design failure by the broader
-C++ community (even when it is not).
+Historically, repetition of keywords (i.e., `noexcept(noexcept(E))` and
+`requires requires`) is often viewed as a design failure by the broader C++
+community (even when it is not).
 
 It seems like there should be some contexts in which the extra annotations
 can be elided because only a limited subset of terms are allowed. In the
@@ -143,8 +192,8 @@ that we would need a new splice notation as `(x)` is not a viable choice.
 
 ## P2237 {#eval.p2237}
 
-Parsing for P2237's splice notation is interesting but not overly complex
-in non-dependent cases. Because the operand is a constant expression, we
+Parsing for P2237's splice notation is interesting but not overly complex in
+non-dependent cases. Because the operand is a constant expression, the compiler
 can determine the grammatical category of the splice as we parse it.
 
 ```cpp
@@ -392,9 +441,11 @@ only one would be allowed.
 There's not strict requirement for splice notation to be bracketed. The design
 in P2237 prefers brackets for its visual appeal, but we could easily choose to
 do this with a unary operator, replacing the suggested `[<x>]` notation with,
-say, `%x`.
+say, `%x`. This is particularly attractive if we decide to go forward with a
+“reflexpr” operator that is also a unary operator (like `^` used mostly
+throughout this document).
 
-As above, without qualification any splice is an expression:
+As above, without qualification a splice is an expression:
 
 ```cpp
 template<meta::info v, // reflects a variable

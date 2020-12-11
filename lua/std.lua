@@ -1,4 +1,23 @@
+-- Supports transformations for standard editing conventions including:
+--
+-- Noting the addition of text via [+text]{}
+-- Noting the removal of text via [~text]{}
+-- Noting grammar terms [:term]{}
+--
+-- TODO: Implement the grammar term functionality. That essentially transforms
+-- the term into sans-serif font.
+--
+-- TODO: Support fenced divs for added/removed blocks. And do the same for
+-- BNF blocks. These would probably look like this:
+--
+--    ::: {.bnf}
+--    | term:
+--    |   alt
+--    :::
+--
+-- and similarly for other structures.
 
+--- Recusively describe a table.
 function dumpTable(table, depth)
   if (depth > 200) then
     print("Error: Depth > 200 in dumpTable()")
@@ -73,14 +92,37 @@ function transform_span(span, mark, xform)
   return xform(span)
 end
 
+-- Markup span as a grammar-term.
+function grammar_term(span)
+  if FORMAT:match "latex" then
+    return latex_macro("grammarterm", span)
+  end
+  if FORMAT:match "docx" then
+    span.attributes["custom-style"] = "Grammar Char"
+    return span
+  end
+end
+
 -- Markup span as inserted.
 function inserted(span)
-  return latex_macro("added", span)
+  if FORMAT:match "latex" then
+    return latex_macro("added", span)
+  end
+  if FORMAT:match "docx" then
+    span.attributes["custom-style"] = "Added Char"
+    return span
+  end
 end
 
 -- Markup span as deleted.
 function deleted(span)
-  return latex_macro("removed", span)
+  if FORMAT:match "latex" then
+    return latex_macro("removed", span)
+  end
+  if FORMAT:match "docx" then
+    span.attributes["custom-style"] = "Removed Char"
+    return span
+  end
 end
 
 -- Transform spans of the form `[<k>text<k>]{}` where <k> is a formatting
@@ -90,14 +132,65 @@ end
 -- - [+text]{} becomes [text]{.ins} for inserted text
 -- - [~text]{} becomes [text]{.del} for deleted text
 -- - [^text]{} becomes [text]{.bnf} for grammar terms
-function Span(s)
+function Span(span)
+  bnf = ":"
   ins = "+"
   del = "~"
-  if starts_with(s, ins) then
-    return transform_span(s, ins, inserted)
-  elseif starts_with(s, del) then
-    return transform_span(s, del, deleted)
+  if starts_with(span, bnf) then
+    return transform_span(span, bnf, grammar_term)
+  elseif starts_with(span, ins) then
+    return transform_span(span, ins, inserted)
+  elseif starts_with(span, del) then
+    return transform_span(span, del, deleted)
   end
   return s
 end
 
+-- Make sure Code blocks are formatted correctly. Ensure that code is not
+-- italicized from an enclosing environment.
+function Code(code)
+  if FORMAT:match "latex" then
+    c = {
+      pandoc.RawInline("latex", "\\textnormal{"),
+      code,
+      pandoc.RawInline("latex", "}")
+    }
+    return pandoc.Span(c)
+  end
+  return code
+end
+
+-- Returns true if `elem` contains `class` as a class.
+function has_class(elem, class)
+  for k, v in pairs(elem.classes) do
+    if v == class then
+      return true
+    end
+  end
+  return false
+end
+
+-- Returns true if `div` contains "bnf" as a class.
+function is_bnf(elem)
+  return has_class(elem, "bnf")
+end
+
+-- Wrap the contents of `div` in the latex environemnt.
+--
+-- TODO: We should probably propagate other attributes from the original
+-- div to the new div. Same for spans above.
+function latex_env(env, div)
+  c = {
+    pandoc.Para(pandoc.RawInline("latex", "\\begin{"..env.."}")),
+    div.content[1],
+    pandoc.Para(pandoc.RawInline("latex", "\\end{"..env.."}"))
+  }
+  return pandoc.Div(c)
+end
+
+function Div(div)
+  if is_bnf(div) then
+    return latex_env("bnf", div)
+  end
+  return div
+end
