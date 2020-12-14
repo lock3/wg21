@@ -1,21 +1,32 @@
 -- Supports transformations for standard editing conventions including:
 --
--- Noting the addition of text via [+text]{}
--- Noting the removal of text via [~text]{}
--- Noting grammar terms [:term]{}
+-- Noting the addition of text via [text]{.add}
+-- Noting the removal of text via [text]{.rem}
+-- Writing grammar terms [term]{.bnf}
+-- BNF block  using :::{.bnf}
 --
--- TODO: Implement the grammar term functionality. That essentially transforms
--- the term into sans-serif font.
+-- In the case of BNF blocks, the content is a two-level unordered list that
+-- mixes normal text (grammar terms) and code blocks. For
+-- example:
 --
--- TODO: Support fenced divs for added/removed blocks. And do the same for
--- BNF blocks. These would probably look like this:
---
---    ::: {.bnf}
---    | term:
---    |   alt
+--    :::{.bnf}
+--    - primary-expression:
+--      - `(` expression `)`
 --    :::
 --
--- and similarly for other structures.
+-- Note that this module has a Code transform that ensures that inline code
+-- remains upright and is not italicized in these environments.
+--
+-- TODO: Add support for added and removed divs. That's going to be trickier
+-- because it has to has to style "additively" through all content. This might
+-- be easy for Latex and HTML (maybe), but Word doesn't really additive
+-- formatting.
+--
+-- TODO: Add support for paragraph numbers. Steal the formatting from the
+-- C++ standard for its pnum and listnum attributes. This will be tricker in
+-- MS word and HTML.
+
+-- Untility functions
 
 --- Recusively describe a table.
 function dumpTable(table, depth)
@@ -38,35 +49,25 @@ function dump(table)
   dumpTable(table, 1)
 end  
 
--- Returns the first n character of `str`.
-function first_chars(str, n)
-  return string.sub(str.text, 1, n)
+-- Returns the the index of value in table or 0 if not present.
+function find(table, value)
+  for i, v in ipairs(table) do
+    if v == value then
+      return i
+    end
+  end
+  return 0
 end
 
--- Returns the last n charactr of `str`.
-function last_chars(str, n)
-  return string.sub(str.text, #str.text - n, n)
+--- Returns true if table contains value. Otherwise false.
+function contains(table, value)
+  if find(table, value) ~= 0 then
+    return true
+  end
+  return false
 end
 
---- Returns the substring without the first n characters.
-function drop_first(str, n)
-  str.text = string.sub(str.text, n + 1, #str.text)
-end
-
---- Returns the substring without the last n characters.
-function drop_last(str, n)
-  str.text = string.sub(str.text, 1, #str.text - n)
-end
-
--- Returns true if `first` starts with `mark`.
-function starts_with_mark(first, mark)
-  return first_chars(first, #mark) == mark
-end
-
--- Returns true if `span` starts with the editing `mark`.
-function starts_with(span, mark)
-  return starts_with_mark(span.content[1], mark)
-end
+-- Latex helpers
 
 -- Apply a unary macro to a span of text. This flattens the contents of the
 -- span, so the macro should apply to a sequence of Strs.
@@ -80,31 +81,24 @@ function latex_macro (macro, span)
   return pandoc.Span(c)
 end
 
--- Rewrite the span by dropping the mark and inserting the class.
-function transform_span(span, mark, xform)
-  -- Strip the editing mark from the content.
-  drop_first(span.content[1], #mark)
-
-  -- Apply the transformation
-  if xform == nil then
-    return span
-  end
-  return xform(span)
+-- Wrap the contents of `div` in the latex environemnt.
+--
+-- TODO: We probably propagate other attributes from the original div to the new
+-- div. Same for spans above.
+function latex_environment(env, div)
+  c = {
+    pandoc.Para(pandoc.RawInline("latex", "\\begin{"..env.."}")),
+    div.content[1],
+    pandoc.Para(pandoc.RawInline("latex", "\\end{"..env.."}"))
+  }
+  return pandoc.Div(c)
 end
 
--- Markup span as a grammar-term.
-function grammar_term(span)
-  if FORMAT:match "latex" then
-    return latex_macro("grammarterm", span)
-  end
-  if FORMAT:match "docx" then
-    span.attributes["custom-style"] = "Grammar Char"
-    return span
-  end
-end
+-- Styling functions
 
--- Markup span as inserted.
-function inserted(span)
+-- Returns a Span marked as an insertion, depending on the output format of the
+-- document.
+function make_insertion(span)
   if FORMAT:match "latex" then
     return latex_macro("added", span)
   end
@@ -114,8 +108,9 @@ function inserted(span)
   end
 end
 
--- Markup span as deleted.
-function deleted(span)
+-- Returns a Span marked as an deletion, depending on the output format of the
+-- document.
+function make_deletion(span)
   if FORMAT:match "latex" then
     return latex_macro("removed", span)
   end
@@ -125,6 +120,27 @@ function deleted(span)
   end
 end
 
+-- Returns a Span marked as a grammar term, depending on the output format of
+-- the document.
+function make_grammar_term(span)
+  if FORMAT:match "latex" then
+    return latex_macro("grammarterm", span)
+  end
+  if FORMAT:match "docx" then
+    span.attributes["custom-style"] = "Grammar Char"
+    return span
+  end
+end
+
+-- Returns a Div enclosing a block of BNF declarations.
+function make_grammar_spec(div)
+  if FORMAT:match "latex" then
+    return latex_environment("bnf", div)
+  end
+end
+
+-- Filter functions
+
 -- Transform spans of the form `[<k>text<k>]{}` where <k> is a formatting
 -- mark into spans of the form `[text]`{.class=<c>} where <c> is the
 -- corresponding class style. We currently support the following spans:
@@ -133,21 +149,21 @@ end
 -- - [~text]{} becomes [text]{.del} for deleted text
 -- - [^text]{} becomes [text]{.bnf} for grammar terms
 function Span(span)
-  bnf = ":"
-  ins = "+"
-  del = "~"
-  if starts_with(span, bnf) then
-    return transform_span(span, bnf, grammar_term)
-  elseif starts_with(span, ins) then
-    return transform_span(span, ins, inserted)
-  elseif starts_with(span, del) then
-    return transform_span(span, del, deleted)
+  if (contains(span.classes, "add")) then
+      return make_insertion(span)
+  elseif (contains(span.classes, "rem")) then
+    return make_deletion(span)
+  elseif (contains(span.classes, "bnf")) then
+    return make_grammar_term(span)
+  else
+    return span
   end
-  return s
 end
 
--- Make sure Code blocks are formatted correctly. Ensure that code is not
--- italicized from an enclosing environment.
+-- Make sure that inline code is formatted correctly (i.e., not italicized)...
+-- to the extent possible (e.g., BNF).
+--
+-- TODO: Verify the this works in different environments.
 function Code(code)
   if FORMAT:match "latex" then
     c = {
@@ -160,37 +176,9 @@ function Code(code)
   return code
 end
 
--- Returns true if `elem` contains `class` as a class.
-function has_class(elem, class)
-  for k, v in pairs(elem.classes) do
-    if v == class then
-      return true
-    end
-  end
-  return false
-end
-
--- Returns true if `div` contains "bnf" as a class.
-function is_bnf(elem)
-  return has_class(elem, "bnf")
-end
-
--- Wrap the contents of `div` in the latex environemnt.
---
--- TODO: We should probably propagate other attributes from the original
--- div to the new div. Same for spans above.
-function latex_env(env, div)
-  c = {
-    pandoc.Para(pandoc.RawInline("latex", "\\begin{"..env.."}")),
-    div.content[1],
-    pandoc.Para(pandoc.RawInline("latex", "\\end{"..env.."}"))
-  }
-  return pandoc.Div(c)
-end
-
 function Div(div)
-  if is_bnf(div) then
-    return latex_env("bnf", div)
+  if contains(div.classes, "bnf") then
+    return make_grammar_spec(div)
   end
   return div
 end

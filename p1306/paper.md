@@ -2,7 +2,7 @@
 title: Expansion Statements
 author: 
   - Andrew Sutton (<asutton@lock3software.com>)
-  - Sam Goodrick (sgoodrick@lock3software.com>)
+  - Sam Goodrick (<sgoodrick@lock3software.com>)
   - Daveed Vandevoorde (<daveed@edg.com>)
 # date: Oct 15, 2020
 
@@ -20,6 +20,15 @@ geometry:
 
 # Version history {#history}
 
+This is an add [test]{.add} and this is a [delete]{.rem}. And [grammar-term]{.bnf}.
+
+:::{.bnf}
+- statement
+    - compound-statement
+    - `if` `(` condition `)` statement
+:::
+
+<!--
 - r2 Removed the ability to expand over parameter packs and added a note
   explaining why. This will be readdressed in the future. Updated wording based
   on CWG review.
@@ -641,3 +650,4 @@ There was an overlooked discussion about this feature on std.proposals in 2013
 (https://groups.google.com/a/isocpp.org/forum/#!topic/std-proposals/vseNksuBviI).
 
 # References {-}
+-->

@@ -432,6 +432,8 @@ $endif$
 % The BNF grammar environment.
 \newenvironment{bnf}
 {
+  \renewcommand{\labelitemi}{}
+  \renewcommand{\labelitemii}{}
   \sffamily\itshape\par\color{bnf-color}
 }
 {

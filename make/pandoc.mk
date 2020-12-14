@@ -23,7 +23,7 @@ common_flags = -f markdown+citations+bracketed_spans+fenced_divs+escaped_line_br
 	-s -N $(bib_flags) $(lua_flags)
 
 # Use this for compiling LaTex/PDF documents.
-latex_flags = -t latex --template $(latex_path)/default.latex $(common_flags)
+latex_flags = -t latex --template $(latex_path)/default.tex $(common_flags)
 
 # Use this for compiling docx documents.
 docx_flags = -t docx $(common_flags) --reference-doc=$(docx_path)/style.docx
