@@ -11,6 +11,9 @@ geometry:
 - right=1in
 - top=1in
 - bottom=1in
+
+bibliography:
+  - ../bib/wg21.bib
 ---
 
 --------- --------
@@ -21,7 +24,7 @@ geometry:
 # Introduction {#intro}
 
 This paper suggests a new syntax for reflection and splicing that differs from
-both [@P1240R1] and [@P2237R0]. The syntax in both proposals have various
+both [@P1240R1] and [@P2237R0]. The syntax in both proposals has various
 weaknesses. P1240R1 is largely written using placeholder notation, and while
 P2237 offers some concrete improvements, it turns out to have some ambiguity
 issues.
@@ -40,7 +43,7 @@ respect to several criteria:
   be sufficiently different from existing notations.
 - Futureproof. We shouldn't design notation that prevents future extensions. We
   should also consider future extensions to metaprogramming (like code
-  injection), so that we don't end up with wildly different notations for
+  injection) so that we don't end up with wildly different notations for
   similar kinds of functionality.
 - Unambiguous grammar. The grammar for these terms should be unambiguous, if
   possible (this is C++, not all things are possible).
@@ -89,11 +92,11 @@ The suggested grammar for the reflection is:
 We chose the notation `[: R :]` to denote the splice of a reflection `R`. Here,
 the use of bracket notation is explicitly chosen to denote a "gap" in the source
 code, filled in by the "reflected value" of `R`. The notation is intentionally
-designed to be visually distinctive, because it represents a new programming
+designed to be visually distinctive because it represents a new programming
 concept for C++. We prefer to encourage a degree of unfamiliarity.
 
 In general, and without qualification, `[: R :]` splices an expression into the
-program (assuming `R` reflects a variable, function, or other expression).
+program (assuming `R` reflects a variable, function, or some other expression).
 If `R` reflects a type, template, or namespace, the splice operator must be
 qualified with an appropriate keyword, except in contexts where the meaning
 is obvious. For example:
@@ -119,11 +122,11 @@ void f() {
 
 Note that the extra annotations are necessary even in non-dependent contexts.
 We expect future proposals to relax the requirement for qualifying syntax when
-the splice operand is not value-dependent. For example, most of statements
+the splice operand is not value-dependent. For example, most of the statements
 above could be written without the extra annotations. We do expect this to
 impose additional implementation burdens.
 
-The addition of splicing requires modificaiton of the following grammar terms.
+The addition of splicing requires modification of the following grammar terms.
 
 :::{.bnf}
 - splice
@@ -143,7 +146,7 @@ The addition of splicing requires modificaiton of the following grammar terms.
 :::
 
 :::{.bnf}
-- nested-name-specifir:
+- nested-name-specifier:
   - ...
   - splice `::`
   - nested-name-specifier `template`~opt~ splice
@@ -189,7 +192,7 @@ We don't currently offer a way to force `Refl` to be an expression.
 The ability to expand a range of reflections into a list of function arguments,
 template arguments, base classes, etc. is an important use case for
 metaprogramming. However, the expansion of non-packs is a novel feature and
-equires new syntax to nominate a term as being expandable. Our preferred
+requires new syntax to nominate a term as being expandable. Our preferred
 approach is to require an ellipsis *before* the term being expanded. For
 example:
 

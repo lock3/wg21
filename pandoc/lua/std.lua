@@ -36,16 +36,28 @@ function dumpTable(table, depth)
   end
   for k,v in pairs(table) do
     if (type(v) == "table") then
-      print(string.rep("  ", depth)..k.." :: "..type(v)..":")
+      if table.tag ~= nil then
+        print(string.rep("  ", depth)..k.." :: "..type(v).."::"..table.tag)
+      else
+        print(string.rep("  ", depth)..k.." :: "..type(v)..":")
+      end
       dumpTable(v, depth+1)
     else
-      print(string.rep("  ", depth)..k.." :: "..type(v)..": ", v)
+      if table.tag ~= nil then
+        print(string.rep("  ", depth)..k.." :: "..type(v).."::"..table.tag, v)
+      else
+        print(string.rep("  ", depth)..k.." :: "..type(v)..": ", v)
+      end
     end
   end
 end
 
 function dump(table)
-  print("::"..type(table)..":")
+  if table.tag ~= nil then
+    print("::"..type(table).."::"..table.tag)
+  else
+    print("::"..type(table)..":")
+  end
   dumpTable(table, 1)
 end  
 
@@ -86,12 +98,11 @@ end
 -- TODO: We probably propagate other attributes from the original div to the new
 -- div. Same for spans above.
 function latex_environment(env, div)
-  c = {
+  return pandoc.Div {
     pandoc.Para(pandoc.RawInline("latex", "\\begin{"..env.."}")),
-    div.content[1],
+    div,
     pandoc.Para(pandoc.RawInline("latex", "\\end{"..env.."}"))
   }
-  return pandoc.Div(c)
 end
 
 -- Styling functions
@@ -132,10 +143,69 @@ function make_grammar_term(span)
   end
 end
 
+-- Break the initial bullet list (pandoc combines these into a single list)
+-- into a sequence of "bnf" environments.
+function rewrite_latex_grammar_defs(div)
+  blocks = div.content[1].content
+  divs = {}
+  for i, b in ipairs(blocks) do
+    ul = pandoc.BulletList {{b[1], b[2]}}
+    divs[#divs + 1] = latex_environment("bnf", ul)
+  end
+  div.content = divs
+end
+
+-- Return a paragraph encapsulating the grammar definition in list.
+function make_docx_grammar_def(list)
+  attrs = {}
+  attrs["custom-style"] = "Grammar Char"
+
+  -- Generate the term definition (first line)
+  out = {}
+  out[#out + 1] = pandoc.Span(list[1].content[1], attrs)
+  out[#out + 1] = pandoc.LineBreak()
+
+  -- Generate the alternatives
+  for i = 2, #list do
+    alts = list[i].content
+    for j, alt in ipairs(alts) do
+      -- Insert some white space to emulate a tab.
+      --
+      -- FIXME: How do we just insert a regular tab?
+      for k=1,8 do out[#out + 1] = pandoc.Space() end
+
+      -- Replace the plain content with a span.
+      out[#out + 1] = pandoc.Span(alt[1].content, attrs)
+      
+      -- Add newlines after all but the last alternative.
+      if j ~= #alts then
+        out[#out + 1] = pandoc.LineBreak()
+      end
+    end
+  end
+  return pandoc.Para(out)
+end
+
+-- Rewrite the div into a sequence of paragraphs with styled character text.
+function rewrite_docx_grammar_defs(div)
+  blocks = div.content[1].content
+  pars = {}
+  for i, b in ipairs(blocks) do
+    pars[#pars + 1] = make_docx_grammar_def(b)
+  end
+  div.content = pars
+end
+
 -- Returns a Div enclosing a block of BNF declarations.
 function make_grammar_spec(div)
   if FORMAT:match "latex" then
-    return latex_environment("bnf", div)
+    rewrite_latex_grammar_defs(div)
+    -- r = latex_environment("bnf", div)
+    return div
+  end
+  if FORMAT:match "docx" or FORMAT:match "json" then
+    rewrite_docx_grammar_defs(div)
+    return div
   end
 end
 
