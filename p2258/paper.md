@@ -173,44 +173,73 @@ void g() {
 }
 ```
 
+We anticipate the later addition of an _idenfifier-splice_ construct (currently
+we use the `[# str #]` syntax in discussions among authors).  However, that
+construct operates in part at the lexical level and has considerably more
+subtleties that the authors are exploring (in part through prototype
+implementations).  We therefore do propose syntax for it here, and we expect
+that the corresponding functionality will be separated out in revisions of
+P1240.
+
 The addition of splicing requires modification of the following grammar terms.
-
-<!--
-  FIXME [DV]: I don't think that grammar is quite right.  I'll get back to this
-  later.
-
-  [AS]: It's almost certainly wrong :)
--->
 
 :::{.bnf}
 - splice
-  - `[:` conditional-expression `:]`
+  - `[:` assignment-expression `:]`
 :::
 
 :::{.bnf}
 - primary-expression
   - ...
-  - `template`~opt~ splice
+  - splice
 :::
 
 :::{.bnf}
 - postfix-expression
   - ...
-  - postfix-expression `.` splice
+  - postfix-expression `.` `template`~opt~ splice
+  - postfix-expression `->` `template`~opt~ splice
+
 :::
 
 :::{.bnf}
 - nested-name-specifier:
   - ...
   - splice `::`
-  - nested-name-specifier `template`~opt~ splice
 :::
 
 :::{.bnf}
-- typename-specifier:
+- qualified-namespace-specifier:
   - ...
-  - typename `template`~opt~ splice
+  - `namespace` splice
 :::
+
+:::{.bnf}
+- simple-type-specifier:
+  - ...
+  - `typename`~opt~  splice
+  - `template` splice
+:::
+
+(The `typename` keyword in a _simple-type-specifier_ will be optional in very
+specific grammatical contexts, such as in a _base-specifier_.)
+
+:::{.bnf}
+- simple-template-id:
+  - ...
+  - `template` splice `<` template-argument-list '>'
+:::
+
+:::{.bnf}
+- template-argument:
+  - ...
+  - `template` splice
+:::
+
+(The grammar change for _simple-template-id_ will unfortunately require quite
+a few wording adjustments.  Ideally, the way templates are "named" should be
+reworked in the grammar, because it is currently rather unintuitive.)
+
 
 
 ## Splicing packs {#splice.pack}
