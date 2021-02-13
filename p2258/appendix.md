@@ -2,7 +2,7 @@
 
 This section provides analysis of other notations we considered.
 
-## P1240 Evaluation {#app.p1240}
+## P1240 {#app.p1240}
 
 P1240 is our (the authors') initial (and revised) proposal for static
 reflection and splicing. For reflecting source constructs, we adopted the `reflexpr` operator

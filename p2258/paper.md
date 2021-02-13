@@ -53,7 +53,7 @@ respect to several criteria:
   that cannot be supported by all implementations is not viable.
 
 Section [](#prop) presents the notation we've chosen for reflection and splicing.
-Appendix YYY presents other notations and brief analyses.
+Appendix [](#app) presents other notations and brief analyses.
 
 # Proposal {#prop}
 
