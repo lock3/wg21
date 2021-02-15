@@ -97,12 +97,23 @@ splice notation.
 
 The single bracketed approach is what we suggest in our proposal. 
 
-One of the major motivating reasons for making the splice operator a bracketed
-expression is to allow its use in member access expressions:
+There are two syntactic motivating reasons for making the splice operator a
+bracketed expression: to represent "gaps" or "blanks" filled by a reflection and
+to allow its use in member access expressions:
 
 ```cpp
-cout << x.[: get_member() :];
+cout << x.[:get_member():];
 ```
+
+We could have avoided this extension by just using the member-to-pointer syntax,
+but it feels a little too arcane:
+
+```cpp
+cout << x.*[:get_member():];
+cout << (x->*[:get_member_fn():])(args);
+```
+
+Splicing member reflections directly through the `.` feels a bit more ergonomic.
 
 We considered a number of different bracket operators, but ended up choosing
 `[:` and  `:]`. Some alternatives included:
@@ -119,9 +130,11 @@ We considered a number of different bracket operators, but ended up choosing
   operator [@P2011R0].
 - `(| R |)`. Considered briefly.
 - `{| R |}`. Not considered.
-- `[< R >]`. Proposed in P1240 for splicing template arguments.
+- `[< R >]`. Proposed in P1240 for splicing template arguments and implemented
+  experimentally in Clang (with good feedback). However, we wanted to preserve
+  `<>` notations for features a little more template-y.
 
-There are a lot of way we can combine tokens to create brackets. The current
+There are a lot of ways we can combine tokens to create brackets. The current
 proposal seems to be a reasonable choice and has been found pleasant enough
 while working through use-cases.
 
@@ -147,8 +160,8 @@ template-ids have `<>`s and namespaces appear in *nested-name-specifier*s. The
 choice of brackets for expressions and types are chosen somewhat arbitrarily
 (types appear in italics?).
 
-The benefit of this approach is that eliminates the need for keywords in many
-contexts.  For example:
+One plausible benefit of this approach is that it eliminates the need for
+keywords in many contexts.  For example:
 
 ```cpp
 // template-id
@@ -170,8 +183,9 @@ foo::[:ns:]::id
 Note that we still need a leading `typename` when splicing a [template-id]{.bnf}
 as a type. That seems unavoidable.
 
-The downside of this approach is that it can be more than a bit cryptic. It also
-means that programmers have to choose the right splice notation in contexts
+The benefit is more illusory than real. We're not eliminating keywords, we're
+replacing them with notation, which can be a more cryptic than beneficial. It
+also means that programmers have to choose the right splice notation in contexts
 where only one would be allowed.
 
 ### Unary splice
@@ -214,8 +228,6 @@ foo::%ns::id
 foo::template %temp<int>::id
 ```
 
-FIXME: Add discussion of precedence and examples from email.
-
 If we choose this direction, then we should also choose an alternative for the
 `reflexpr` operator so that they naturally complement each other. For example,
 we could choose `/` for the reflection operator.
@@ -247,5 +259,5 @@ somewhat clever construction:
 ```
 
 A downside of this approach is that single character unary operators are not
-particularly visually distinctive, and we have found that splice constructs
-standing out really helps readability. This also seems just a little too cute.
+very visually distinctive, and we have found that splice constructs standing out
+really helps readability. This also seems just a little too cute.
